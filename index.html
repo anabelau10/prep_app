@@ -356,7 +356,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
 // ── GOOGLE SHEETS CONFIG ──
 // Paste your Apps Script web app URL here after deploying
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwIfaHvA9_Sq0pXlXtIkHBjQvW2b5hjHI6j1ZEmOf7j2dzp6JsukqsYJBQmRZLrQv2p/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz0hq3mRJDQ7v7Pr-dzDMYm2HH1CS_FBlx8QynvnXDitSD8UPKozS9C1-7TKxBnzhB9/exec';
 
 // ── SYNC QUEUE + RETRY BUFFER ──
 // Every row is pushed to a durable queue in localStorage and only removed once
@@ -378,9 +378,14 @@ function genId(){
 }
 
 // Public entry point — enqueue a row and attempt a flush.
+// `loggedAt` is the authoritative last-write-wins timestamp, shared by client
+// merge and server upsert. Stamped once here at the moment of the user action.
 function syncToSheets(row){
   if(!SHEETS_URL) return;
-  const item={...row, id: row.id||genId(), _ts: new Date().toISOString()};
+  const item={...row, id: row.id||genId(), loggedAt: row.loggedAt||new Date().toISOString()};
+  // Record locally so pull-merge knows how fresh our copy of this id is.
+  rowMeta[item.id]=item.loggedAt;
+  saveRowMeta();
   syncQueue.push(item);
   saveQueue();
   flushQueue();
@@ -449,6 +454,136 @@ function setSyncStatus(state){
 function updateSyncBadge(){
   setSyncStatus(pendingCount()? 'fail' : 'ok');
 }
+
+// ── ROW METADATA (last-write-wins clock) ──
+// rowMeta maps each row id -> the loggedAt timestamp of our local copy. Used to
+// decide, on pull, whether the sheet's version of a row is newer than ours.
+let rowMeta={};
+function loadRowMeta(){
+  try{ rowMeta=JSON.parse(localStorage.getItem('wucc_rowMeta')||'{}'); }catch(e){ rowMeta={}; }
+}
+function saveRowMeta(){
+  try{ localStorage.setItem('wucc_rowMeta',JSON.stringify(rowMeta)); }catch(e){}
+}
+
+// ── PULL + MERGE (sheet -> app) ──
+// Fetches every row from the sheet and rebuilds local state. Merge rule is
+// last-write-wins per row id: the sheet's row replaces our local copy only when
+// its loggedAt is newer than what we have. Anything we changed more recently
+// (and may still be sitting in the unsynced queue) is preserved.
+async function pullFromSheets(){
+  if(!SHEETS_URL) return false;
+  setSyncStatus('pending');
+  let data;
+  try{
+    const res=await fetch(SHEETS_URL,{method:'GET',redirect:'follow'});
+    if(!res.ok) throw new Error('http '+res.status);
+    data=await res.json();
+  }catch(e){
+    // Offline / unreachable: keep local state, don't wipe anything.
+    updateSyncBadge();
+    return false;
+  }
+  if(!data || !data.ok || !Array.isArray(data.rows)){ updateSyncBadge(); return false; }
+
+  // Build a set of ids still waiting to be sent, so a stale sheet copy never
+  // clobbers an edit we haven't successfully pushed yet.
+  const queuedIds=new Set(syncQueue.map(i=>i.id));
+
+  let changed=false;
+  for(const r of data.rows){
+    if(!r.id) continue;
+    const localTs=rowMeta[r.id]||'';
+    const remoteTs=r.loggedAt||'';
+    // Skip if we have a pending local write for this id, or our copy is newer.
+    if(queuedIds.has(r.id)) continue;
+    if(localTs && remoteTs && localTs>=remoteTs) continue;
+    if(localTs && !remoteTs) continue;
+
+    if(applyRow(r)) changed=true;
+    rowMeta[r.id]=remoteTs||new Date().toISOString();
+  }
+
+  if(changed){ saveState(); saveRowMeta(); }
+  else { saveRowMeta(); }
+  return changed;
+}
+
+// Apply a single sheet row onto local state. Returns true if state changed.
+function applyRow(r){
+  const id=r.id;
+  const del=r.deleted===true || r.deleted==='TRUE' || r.deleted==='true';
+
+  if(id.startsWith('block_')){
+    const key=id.slice(6);
+    if(del){
+      if(completedBlocks[key]||blockMeta[key]){ delete completedBlocks[key]; delete blockMeta[key]; return true; }
+      return false;
+    }
+    completedBlocks[key]=true;
+    blockMeta[key]={
+      rpe: num(r.rpe),
+      notes: r.notes||'',
+      pain: { leftAnkle:num(r.leftAnkle), rightAnkle:num(r.rightAnkle), shoulder:num(r.shoulder) }
+    };
+    return true;
+  }
+
+  if(id.startsWith('custom_')){
+    const cid=Number(id.slice(7));
+    const idx=customSessions.findIndex(s=>Number(s.id)===cid);
+    if(del){
+      if(idx>-1){ customSessions.splice(idx,1); return true; }
+      return false;
+    }
+    const entry={
+      id: cid,
+      date: r.date,
+      type: r.type||'Gym',
+      duration: r.duration||'',
+      rpe: num(r.rpe),
+      notes: r.notes||'',
+      pain: { leftAnkle:num(r.leftAnkle), rightAnkle:num(r.rightAnkle), shoulder:num(r.shoulder) }
+    };
+    if(idx>-1) customSessions[idx]=entry; else customSessions.push(entry);
+    return true;
+  }
+
+  if(id.startsWith('creatine_')){
+    const day=id.slice(9);
+    const taken=r.taken==='TRUE'||r.taken==='true'||r.taken===true;
+    if(taken){ creatineLog[day]=true; return true; }
+    if(creatineLog[day]){ delete creatineLog[day]; return true; }
+    return false;
+  }
+
+  if(id.startsWith('pain_')){
+    // id = pain_<date>_<time>
+    const rest=id.slice(5);
+    const us=rest.lastIndexOf('_');
+    const day=rest.slice(0,us), time=rest.slice(us+1);
+    const ex=r.extra||{};
+    if(del){
+      if(painLog[day]&&painLog[day][time]){ delete painLog[day][time]; return true; }
+      return false;
+    }
+    if(!painLog[day]) painLog[day]={};
+    painLog[day][time]={ leftAnkle:num(ex.leftAnkle), rightAnkle:num(ex.rightAnkle), shoulder:num(ex.shoulder) };
+    return true;
+  }
+
+  if(id.startsWith('gate_')){
+    const i=id.slice(5);
+    const ex=r.extra||{};
+    const status=ex.status||r.notes;
+    if(status){ gateStatuses[i]=status; return true; }
+    return false;
+  }
+
+  return false;
+}
+
+function num(v){ const n=parseInt(v); return isNaN(n)?0:n; }
 
 // ── DATES ──
 // Parse 'YYYY-MM-DD' strings as LOCAL midnight, not UTC midnight.
@@ -1113,6 +1248,16 @@ function savePain(time){
   painLog[today][time]=data;
   saveState();
   renderPainLog();
+  syncToSheets({
+    id:'pain_'+today+'_'+time,
+    source:'pain',
+    date:today,
+    type:'Pain',
+    blockName:'',duration:'',rpe:'',
+    notes:time,
+    leftAnkle:data.leftAnkle,rightAnkle:data.rightAnkle,shoulder:data.shoulder,
+    extra:{leftAnkle:data.leftAnkle,rightAnkle:data.rightAnkle,shoulder:data.shoulder,time:time}
+  });
 }
 
 // ── GATES ──
@@ -1127,15 +1272,32 @@ function renderGates(){
   }).join('');
 }
 
+function syncGate(i){
+  syncToSheets({
+    id:'gate_'+i,
+    source:'gate',
+    date:todayKey(),
+    type:'Gate',
+    blockName:GATES[i]?GATES[i].title:'',
+    duration:'',rpe:'',
+    notes:gateStatuses[i]||'',
+    leftAnkle:'',rightAnkle:'',shoulder:'',
+    extra:{status:gateStatuses[i]||''}
+  });
+}
 function markGatePassed(i){
   gateStatuses[i]='passed';
   if(i+1<GATES.length&&(gateStatuses[i+1]||GATES[i+1].status)==='locked')gateStatuses[i+1]='active';
   saveState();renderGates();
+  syncGate(i);
+  if(i+1<GATES.length) syncGate(i+1);
 }
 function resetGate(i){
   gateStatuses[i]='active';
   if(i+1<GATES.length)gateStatuses[i+1]='locked';
   saveState();renderGates();
+  syncGate(i);
+  if(i+1<GATES.length) syncGate(i+1);
 }
 
 // ── BLOCK COMPLETION MODAL ──
@@ -1281,6 +1443,15 @@ function deleteSession(id){
     customSessions=customSessions.filter(s=>Number(s.id)!==id);
     saveState();
     renderLog();
+    // Soft-delete on the sheet so the deletion propagates and the row isn't
+    // resurrected by the next pull.
+    syncToSheets({
+      id:'custom_'+id,
+      source:'custom',
+      date:'',type:'',blockName:'',duration:'',rpe:'',notes:'',
+      leftAnkle:'',rightAnkle:'',shoulder:'',
+      deleted:true
+    });
   } else {
     btn.dataset.confirming='true';
     btn.textContent='Tap again to confirm';
@@ -1401,13 +1572,38 @@ function renderLog(){
 }
 
 function renderAll(){renderHeader();renderWeekStrip();renderDays();}
-loadState();loadQueue();renderAll();
+
+// Re-render every view that depends on synced state. Called after a pull merge.
+// Each render is guarded so a missing/unmounted tab can't throw.
+function refreshAll(){
+  const safe=fn=>{ try{ fn(); }catch(e){} };
+  safe(renderHeader);
+  safe(renderWeekStrip);
+  safe(renderDays);
+  safe(renderProgress);
+  safe(renderCreatine);
+  safe(renderPainLog);
+  safe(renderGates);
+  safe(renderLog);
+}
+
+loadState();loadQueue();loadRowMeta();renderAll();
 
 // Retry triggers: on load, when the device regains connectivity, and when the
 // app is brought back to the foreground (covers iOS PWA resume).
 flushQueue();
-window.addEventListener('online',flushQueue);
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden) flushQueue(); });
+
+// Bidirectional sync: pull the sheet's state on load and merge it in, then
+// re-render. Pull again on reconnect and on app resume so other devices'
+// changes show up without a manual refresh.
+async function syncCycle(){
+  await flushQueue();          // push our pending local changes first
+  const changed=await pullFromSheets();  // then pull + merge the sheet
+  if(changed) refreshAll();
+}
+syncCycle();
+window.addEventListener('online',()=>{ flushQueue(); syncCycle(); });
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden){ flushQueue(); syncCycle(); } });
 </script>
 </body>
 </html>
