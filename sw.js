@@ -1,4 +1,4 @@
-const CACHE = 'wucc-v1';
+const CACHE = 'wucc-v2';
 const ASSETS = [
   './',
   './index.html',
