@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WUCC Prep">
+<meta name="theme-color" content="#0f0f0f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>WUCC Prep</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#232323;--surface3:#2a2a2a;
+  --border:#2e2e2e;--border2:#3a3a3a;
+  --text:#f0efe8;--text2:#9a9890;--text3:#5a5958;
+  --green:#4ade80;--green-bg:#0d2318;--green-border:#1a4a2e;
+  --amber:#fbbf24;--amber-bg:#1f1700;--amber-border:#3d2e00;
+  --blue:#60a5fa;--blue-bg:#0a1628;--blue-border:#1a3050;
+  --purple:#a78bfa;--purple-bg:#150d28;--purple-border:#2d1f50;
+  --pink:#f472b6;--pink-bg:#1f0a14;--pink-border:#3d1428;
+  --radius:10px;--radius-sm:6px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;overscroll-behavior:none}
+.app{max-width:480px;margin:0 auto;padding:0 0 88px;min-height:100vh}
+
+/* Install banner */
+#installBanner{display:none;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;z-index:1000;background:var(--purple-bg);border-bottom:0.5px solid var(--purple-border);padding:10px 16px;padding-top:max(env(safe-area-inset-top),10px);display:flex;align-items:center;gap:10px}
+#installBanner.hidden{display:none!important}
+#installBanner span{flex:1;font-size:12px;color:var(--text2)}
+#installBanner strong{color:var(--purple)}
+#installBtn{font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;background:var(--purple);color:#150d28;border:none;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+#dismissInstall{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 2px;-webkit-tap-highlight-color:transparent}
+
+.header{padding:env(safe-area-inset-top,20px) 16px 0;padding-top:max(env(safe-area-inset-top),20px)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding-top:8px}
+.header-title{font-size:20px;font-weight:700;letter-spacing:-.03em}
+.header-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.wucc-badge{font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;background:var(--purple-bg);border:0.5px solid var(--purple-border);color:var(--purple);white-space:nowrap}
+
+.week-strip{display:flex;gap:6px;padding:16px 16px 0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.week-strip::-webkit-scrollbar{display:none}
+.wk{min-width:52px;padding:9px 4px;border-radius:var(--radius-sm);border:0.5px solid var(--border);background:var(--surface);cursor:pointer;text-align:center;transition:all .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.wk.active{background:var(--purple-bg);border-color:var(--purple-border)}
+.wk-num{font-size:12px;font-weight:600;color:var(--text2)}
+.wk.active .wk-num{color:var(--purple)}
+.wk-phase{font-size:9px;color:var(--text3);margin-top:2px}
+
+.phase-bar{margin:14px 16px 0;padding:11px 14px;border-radius:var(--radius);background:var(--surface);border:0.5px solid var(--border)}
+.phase-name{font-size:12px;font-weight:600;color:var(--purple)}
+.phase-note{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45}
+
+.section-head{padding:16px 16px 8px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+
+.day-list{padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.day-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .15s;-webkit-tap-highlight-color:transparent}
+.day-card.expanded{border-color:var(--border2)}
+.day-head{padding:13px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.day-name{font-size:14px;font-weight:600;flex:1}
+.day-type-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px}
+.tag-training{background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)}
+.tag-rest{background:var(--surface2);color:var(--text2);border:0.5px solid var(--border)}
+.day-done-count{font-size:11px;color:var(--text3)}
+.day-chevron{font-size:16px;color:var(--text3);transition:transform .2s;flex-shrink:0}
+
+.block-list{padding:0 12px 12px;display:flex;flex-direction:column;gap:6px}
+.block-item{border-radius:var(--radius-sm);overflow:hidden;border:0.5px solid transparent;transition:opacity .15s;-webkit-tap-highlight-color:transparent}
+.block-item.done{opacity:.45}
+.block-header{display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;user-select:none}
+.block-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.block-name{font-size:12px;font-weight:600;flex:1}
+.block-time{font-size:10px;color:var(--text3);flex-shrink:0}
+.block-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.block-check.done{background:var(--green);border-color:var(--green)}
+.block-check.done i{color:#0d2318}
+.block-detail{padding:0 10px 10px;display:none}
+.block-detail.open{display:block}
+.ex-list{display:flex;flex-direction:column;gap:3px}
+.ex-item{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--text2);padding:4px 0;border-bottom:0.5px solid var(--border)}
+.ex-item:last-child{border-bottom:none}
+.ex-num{width:15px;height:15px;border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ex-rx{margin-left:auto;font-size:10px;color:var(--text3);flex-shrink:0;padding-left:6px;white-space:nowrap}
+.cue{margin-top:7px;padding:7px 9px;border-radius:var(--radius-sm);font-size:11px;line-height:1.45;color:var(--amber);background:var(--amber-bg);border:0.5px solid var(--amber-border)}
+
+.b-morning{background:rgba(96,165,250,.07);border-color:rgba(96,165,250,.18)}
+.b-morning .block-dot{background:var(--blue)}
+.b-morning .block-name{color:var(--blue)}
+.b-workout{background:rgba(74,222,128,.07);border-color:rgba(74,222,128,.18)}
+.b-workout .block-dot{background:var(--green)}
+.b-workout .block-name{color:var(--green)}
+.b-cardio{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.18)}
+.b-cardio .block-dot{background:var(--amber)}
+.b-cardio .block-name{color:var(--amber)}
+.b-throw{background:rgba(244,114,182,.07);border-color:rgba(244,114,182,.18)}
+.b-throw .block-dot{background:var(--pink)}
+.b-throw .block-name{color:var(--pink)}
+.b-evening{background:rgba(167,139,250,.07);border-color:rgba(167,139,250,.18)}
+.b-evening .block-dot{background:var(--purple)}
+.b-evening .block-name{color:var(--purple)}
+.b-training{background:rgba(74,222,128,.07);border-color:rgba(74,222,128,.18)}
+.b-training .block-dot{background:var(--green)}
+.b-training .block-name{color:var(--green)}
+.b-rest{background:var(--surface2);border-color:var(--border)}
+.b-rest .block-dot{background:var(--text3)}
+.b-rest .block-name{color:var(--text2)}
+
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:0.5px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:10px 0 8px;color:var(--text3);transition:color .15s;background:none;border:none;-webkit-tap-highlight-color:transparent}
+.nav-btn.active{color:var(--purple)}
+.nav-btn i{font-size:22px}
+.nav-btn span{font-size:10px;font-weight:500}
+
+.content-view{padding:0}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;padding:0 16px}
+.stat-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:13px 14px}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:5px}
+.stat-val{font-size:26px;font-weight:700;letter-spacing:-.03em}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:2px}
+
+.pillar-section{padding:0 16px}
+.pillar-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.pillar-row:last-child{border-bottom:none}
+.pillar-name{font-size:12px;font-weight:500;flex:1;color:var(--text)}
+.pillar-bar-wrap{width:72px;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.pillar-bar{height:100%;border-radius:3px;transition:width .5s}
+.pillar-pct{font-size:11px;color:var(--text3);width:28px;text-align:right}
+
+.gate-list{padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.gate-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px}
+.gate-week{font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.gate-title{font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.gate-criteria{font-size:11px;color:var(--text2);line-height:1.55}
+.gate-status{display:flex;align-items:center;gap:6px;margin-top:9px;font-size:11px;font-weight:500}
+.gate-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+.log-list{padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.log-entry{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.log-date{font-size:11px;color:var(--text3);margin-bottom:7px;font-weight:600}
+.log-blocks{display:flex;flex-wrap:gap;gap:5px}
+.log-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px}
+.empty-state{font-size:13px;color:var(--text3);padding:32px 0;text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="installBanner" class="hidden">
+  <span><strong>Add to Home Screen</strong> for offline access</span>
+  <button id="installBtn">Install</button>
+  <button id="dismissInstall">×</button>
+</div>
+<div class="app">
+  <div id="viewHome">
+    <div class="header">
+      <div class="header-inner">
+        <div>
+          <div class="header-title">WUCC Prep</div>
+          <div class="header-sub" id="headerSub"></div>
+        </div>
+        <div class="wucc-badge" id="wuccCountdown"></div>
+      </div>
+    </div>
+    <div class="week-strip" id="weekStrip"></div>
+    <div class="phase-bar">
+      <div class="phase-name" id="phaseName"></div>
+      <div class="phase-note" id="phaseNote"></div>
+    </div>
+    <div class="section-head">This week</div>
+    <div class="day-list" id="dayList"></div>
+  </div>
+
+  <div id="viewProgress" style="display:none">
+    <div class="header"><div class="header-inner"><div><div class="header-title">Progress</div></div></div></div>
+    <div class="section-head">This week at a glance</div>
+    <div class="stat-grid" id="statGrid"></div>
+    <div class="section-head">Pillars — week completion</div>
+    <div class="pillar-section" id="pillarBars"></div>
+  </div>
+
+  <div id="viewGates" style="display:none">
+    <div class="header"><div class="header-inner"><div><div class="header-title">Return-to-play gates</div></div></div></div>
+    <div class="section-head">Criteria-based progression</div>
+    <div class="gate-list" id="gateList"></div>
+  </div>
+
+  <div id="viewLog" style="display:none">
+    <div class="header"><div class="header-inner"><div><div class="header-title">Session log</div></div></div></div>
+    <div class="section-head">Completed blocks</div>
+    <div class="log-list" id="logList"></div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button class="nav-btn active" id="navHome" onclick="switchView('Home')">
+      <i class="ti ti-calendar-week"></i><span>Plan</span>
+    </button>
+    <button class="nav-btn" id="navProgress" onclick="switchView('Progress')">
+      <i class="ti ti-chart-bar"></i><span>Progress</span>
+    </button>
+    <button class="nav-btn" id="navGates" onclick="switchView('Gates')">
+      <i class="ti ti-shield-check"></i><span>Gates</span>
+    </button>
+    <button class="nav-btn" id="navLog" onclick="switchView('Log')">
+      <i class="ti ti-clock"></i><span>Log</span>
+    </button>
+  </nav>
+</div>
+
+<script>
+// ── Service worker registration ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+// ── Install prompt ──
+let deferredPrompt = null;
+const banner = document.getElementById('installBanner');
+const installBtn = document.getElementById('installBtn');
+const dismissBtn = document.getElementById('dismissInstall');
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  banner.classList.remove('hidden');
+});
+installBtn.addEventListener('click', () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(() => { deferredPrompt = null; banner.classList.add('hidden'); });
+});
+dismissBtn.addEventListener('click', () => banner.classList.add('hidden'));
+window.addEventListener('appinstalled', () => banner.classList.add('hidden'));
+
+// ── App data ──
+const WEEKS=[
+  {num:1,phase:'Rehab baseline',note:'Zero lower limb load. Build the morning/evening habit. Bike and rower for cardio — no pool needed.',days:[
+    {d:'Monday',type:'training',blocks:[
+      {c:'morning',n:'Morning routine',t:'07:00 · 18 min',ex:[{e:'Hip CARs — slow full circles',r:'5 min'},{e:'Ankle CARs — pain-free range only',r:'3 min'},{e:'Toe spread + short foot hold ×10',r:'3 min'},{e:'90/90 hip sit, both sides',r:'4 min'},{e:'Thoracic cat-cow ×10 + bed extension',r:'3 min'}],cue:null},
+      {c:'throw',n:'Throwing drills',t:'16:00 · 30 min',ex:[{e:'Stationary backhand — wrist snap ×50',r:''},{e:'Stationary forehand — release point ×50',r:''},{e:'Hammer mechanics, slow ×20',r:''},{e:'Target drill: cone at 10m, alternate hands',r:''}],cue:'Pivot foot stays planted throughout. No lunging.'},
+      {c:'training',n:'Deep Space training',t:'20:00–22:00',ex:[{e:'Warm up with team — no jumping/cutting',r:''},{e:'Call plays and cuts from position',r:''},{e:'Stationary throwing reps between drills',r:''},{e:'Post-session: 5 min debrief with coach',r:''}],cue:null},
+      {c:'evening',n:'Evening rehab',t:'22:30 · 26 min',ex:[{e:'Golf ball plantar fascia roll',r:'3 min'},{e:'Tibialis anterior activation — seated, slow',r:'3 min'},{e:'Soleus stretch — bent knee wall ×45s',r:'3 min'},{e:'Clamshells with band ×20 each',r:'4 min'},{e:'Supine bridge + abduction band ×15',r:'3 min'},{e:'Journal: 1 win, 1 learning, 1 intention',r:'5 min'},{e:'Visualisation: healthy and playing at WUCC',r:'5 min'}],cue:null}
+    ]},
+    {d:'Tuesday',type:'rest',blocks:[
+      {c:'morning',n:'Morning routine',t:'07:00 · 18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90 hip sit',r:'4 min'},{e:'Thoracic cat-cow + extension',r:'3 min'}],cue:null},
+      {c:'cardio',n:'Rowing machine',t:'10:00 · 30 min',ex:[{e:'Warm up 5 min easy',r:''},{e:'Steady state Zone 3 — 140–155 bpm',r:'20 min'},{e:'Cool down easy',r:'5 min'}],cue:'Drive with legs, not lower back. Rib-down brace throughout — same pattern as gym.'},
+      {c:'evening',n:'Evening rehab',t:'21:00 · 26 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells ×20 each',r:'4 min'},{e:'Supine bridge ×15',r:'3 min'},{e:'Journal + visualisation',r:'10 min'}],cue:null}
+    ]},
+    {d:'Wednesday',type:'rest',blocks:[
+      {c:'morning',n:'Morning routine',t:'07:00 · 18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+      {c:'workout',n:'Upper body gym — Day A',t:'10:00 · 65 min',ex:[{e:'Landmine row — bracing primer',r:'3×10'},{e:'Lat pulldown',r:'4×8'},{e:'Seated cable row',r:'3×12'},{e:'Single-arm DB row',r:'3×10 each'},{e:'Face pulls',r:'3×15'},{e:'Landmine press',r:'4×8'},{e:'Pallof press + dead bug superset',r:'3×10'}],cue:'Rib-down on all pressing. Stop lat pulldown if right shoulder complains.'},
+      {c:'evening',n:'Evening rehab',t:'21:00 · 26 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells ×20 each',r:'4 min'},{e:'Supine bridge ×15',r:'3 min'},{e:'Journal + visualisation',r:'10 min'}],cue:null}
+    ]},
+    {d:'Thursday',type:'training',blocks:[
+      {c:'morning',n:'Morning routine',t:'07:00 · 18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+      {c:'throw',n:'Throwing drills',t:'15:00 · 30 min',ex:[{e:'Stationary backhand ×50',r:''},{e:'Stationary forehand ×50',r:''},{e:'Hammer mechanics ×20',r:''},{e:'Target cones at 10m and 20m',r:''}],cue:null},
+      {c:'training',n:'Iceni training',t:'19:45–22:00',ex:[{e:'Warm up with team — modified if needed',r:''},{e:'Lead one tactical walkthrough',r:''},{e:'Stay engaged: call plays, direct stack',r:''},{e:'Post-session debrief',r:''}],cue:null},
+      {c:'evening',n:'Evening rehab',t:'22:30 · 26 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells ×20 each',r:'4 min'},{e:'Supine bridge ×15',r:'3 min'},{e:'Journal + visualisation',r:'10 min'}],cue:null}
+    ]},
+    {d:'Friday',type:'rest',blocks:[
+      {c:'morning',n:'Morning routine',t:'07:00 · 18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+      {c:'workout',n:'Posterior chain gym — Day B',t:'10:00 · 60 min',ex:[{e:'Good morning — empty bar',r:'3×10'},{e:'Back extension — stop at neutral',r:'3×12'},{e:'Lat pulldown',r:'3×8'},{e:'Face pulls',r:'3×15'},{e:'Clamshells + glute bridge superset',r:'3×15'},{e:'Seated hip ER isometrics ×20s each',r:'3×'}],cue:'Back extension: squeeze glutes at top — do NOT hyperextend past neutral. Lumbar hypermobility flag.'},
+      {c:'cardio',n:'Static bike',t:'15:00 · 45 min',ex:[{e:'Warm up 5 min',r:''},{e:'Zone 3 steady — 140–155 bpm',r:'35 min'},{e:'Cool down',r:'5 min'}],cue:'Pending physio clearance for dorsiflexion loading. Swap to rower if not cleared.'},
+      {c:'evening',n:'Evening rehab',t:'21:00 · 26 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells ×20 each',r:'4 min'},{e:'Supine bridge ×15',r:'3 min'},{e:'Journal + visualisation',r:'10 min'}],cue:null}
+    ]},
+    {d:'Saturday',type:'rest',blocks:[
+      {c:'morning',n:'Morning routine',t:'08:00 · 18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+      {c:'cardio',n:'Rowing intervals',t:'10:30 · 35 min',ex:[{e:'Warm up 5 min easy',r:''},{e:'6×3 min hard / 2 min easy — Zone 4',r:''},{e:'Cool down 5 min',r:''}],cue:'RPE 8/10 on hard intervals. Good posture — avoid rounding lower back under fatigue.'},
+      {c:'evening',n:'Evening rehab',t:'21:00 · 26 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells ×20 each',r:'4 min'},{e:'Supine bridge ×15',r:'3 min'},{e:'Journal + visualisation',r:'10 min'}],cue:null}
+    ]},
+    {d:'Sunday',type:'rest',blocks:[
+      {c:'morning',n:'Morning routine',t:'08:00 · 18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+      {c:'rest',n:'Game sense',t:'Flexible · 20 min',ex:[{e:'Watch 15 min game film — annotate 3 decisions',r:''},{e:'Review one Iceni / Deep Space set play',r:''},{e:'Mental reps: 3 cutting sequences',r:''}],cue:null},
+      {c:'evening',n:'Evening rehab',t:'21:00 · 26 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells ×20 each',r:'4 min'},{e:'Supine bridge ×15',r:'3 min'},{e:'Journal + visualisation',r:'10 min'}],cue:null}
+    ]}
+  ]},
+  {num:2,phase:'Rehab baseline',note:'Introduce static bike if physio clears DF loading. Add hip ER isometrics to gym. Rower replaces pool throughout.',days:null},
+  {num:3,phase:'Load introduction',note:'Pain-free 30 min walking gate. Upgrade morning routine to phase 2. Rower intervals progress to 8×2 min.',days:null},
+  {num:4,phase:'Load introduction',note:'Walk-jog gate on grass. Unloaded split squats added. Bike sessions extend to 50 min.',days:null},
+  {num:5,phase:'Run return',note:'Straight-line jog gate. Progressive acceleration runs. Replace good morning with RDL.',days:null},
+  {num:6,phase:'Change of direction',note:'50–75% intensity COD gate. Full throwing with pivot. One controlled team session.',days:null},
+  {num:7,phase:'WUCC taper',note:'Reduce gym to 60% volume. Protect the foot. Arrive healthy.',days:null}
+];
+
+const GATES=[
+  {w:'Wks 1–2',title:'Pain-free passive ROM',criteria:'Full ankle dorsiflexion and plantarflexion without pain on slow movement. Zero sharp pain at rest.',status:'active'},
+  {w:'Wk 3 gate',title:'30 min walking on varied terrain',criteria:'Walk continuously for 30 min outdoors with zero compensatory limping and no pain during or 24h after.',status:'locked'},
+  {w:'Wk 4 gate',title:'Walk-jog intervals on grass',criteria:'10 min walk-jog — 1 min jog / 2 min walk. Pain score 0/10 throughout and 24h after.',status:'locked'},
+  {w:'Wk 5 gate',title:'Straight-line jogging',criteria:'20 min continuous jog on grass at easy pace. Zero pain, zero limp. Physio sign-off required.',status:'locked'},
+  {w:'Wk 5–6 gate',title:'Change of direction 50% → 75%',criteria:'T-drill and 5-10-5 at half speed pain-free before progressing. Each speed requires separate clearance.',status:'locked'},
+  {w:'Wk 6–7 gate',title:'Full-speed cuts + jump-land',criteria:'All prior gates passed. Max-effort cut and two-foot landing pain-free ×5 before returning to full training.',status:'locked'},
+  {w:'Wk 7',title:'One full team session',criteria:'Participate in one full controlled training session with Iceni or Deep Space before WUCC.',status:'locked'}
+];
+
+const PILLAR_COLORS={morning:['#60a5fa','#0a1628'],workout:['#4ade80','#0d2318'],cardio:['#fbbf24','#1f1700'],throw:['#f472b6','#1f0a14'],evening:['#a78bfa','#150d28'],training:['#4ade80','#0d2318'],rest:['#5a5958','#1a1a1a']};
+
+let activeWeek=0,completedBlocks={},expandedDays={},expandedBlocks={};
+
+function loadState(){try{const s=localStorage.getItem('wucc_v1');if(s){const p=JSON.parse(s);completedBlocks=p.completedBlocks||{};activeWeek=p.activeWeek||0;}}catch(e){}}
+function saveState(){try{localStorage.setItem('wucc_v1',JSON.stringify({completedBlocks,activeWeek}));}catch(e){}}
+function blockKey(w,d,b){return `${w}_${d}_${b}`}
+
+function switchView(v){
+  ['Home','Progress','Gates','Log'].forEach(x=>{
+    document.getElementById('view'+x).style.display=v===x?'block':'none';
+    document.getElementById('nav'+x).classList.toggle('active',v===x);
+  });
+  if(v==='Progress')renderProgress();
+  if(v==='Gates')renderGates();
+  if(v==='Log')renderLog();
+}
+
+function renderHeader(){
+  document.getElementById('headerSub').textContent='Week '+WEEKS[activeWeek].num+' of 7';
+  document.getElementById('wuccCountdown').textContent=(7-activeWeek)+' wks to WUCC';
+  document.getElementById('phaseName').textContent=WEEKS[activeWeek].phase;
+  document.getElementById('phaseNote').textContent=WEEKS[activeWeek].note;
+}
+
+function renderWeekStrip(){
+  const el=document.getElementById('weekStrip');el.innerHTML='';
+  WEEKS.forEach((w,i)=>{
+    const b=document.createElement('div');
+    b.className='wk'+(i===activeWeek?' active':'');
+    b.innerHTML=`<div class="wk-num">Wk ${w.num}</div><div class="wk-phase">${w.phase.split(' ')[0]}</div>`;
+    b.onclick=()=>{activeWeek=i;saveState();renderAll();};
+    el.appendChild(b);
+  });
+}
+
+function renderDays(){
+  const el=document.getElementById('dayList');el.innerHTML='';
+  const days=(WEEKS[activeWeek].days||WEEKS[0].days);
+  days.forEach((day,di)=>{
+    const total=day.blocks.length;
+    const done=day.blocks.filter((_,bi)=>completedBlocks[blockKey(activeWeek,di,bi)]).length;
+    const isExp=expandedDays[`${activeWeek}_${di}`];
+    const card=document.createElement('div');
+    card.className='day-card'+(isExp?' expanded':'');
+    const tag=day.type==='training'?`<span class="day-type-tag tag-training">Training</span>`:`<span class="day-type-tag tag-rest">Recovery</span>`;
+    card.innerHTML=`<div class="day-head"><div class="day-name">${day.d}</div>${tag}<div class="day-done-count">${done}/${total}</div><i class="ti ti-chevron-down day-chevron" style="transform:${isExp?'rotate(180deg)':''}"></i></div><div class="block-list" style="display:${isExp?'flex':'none'}"></div>`;
+    card.querySelector('.day-head').onclick=()=>{
+      expandedDays[`${activeWeek}_${di}`]=!expandedDays[`${activeWeek}_${di}`];
+      renderDays();
+    };
+    if(isExp){
+      const bList=card.querySelector('.block-list');
+      day.blocks.forEach((block,bi)=>{
+        const key=blockKey(activeWeek,di,bi);
+        const isDone=!!completedBlocks[key];
+        const isBlockExp=expandedBlocks[key];
+        const col=PILLAR_COLORS[block.c]||PILLAR_COLORS.rest;
+        const bEl=document.createElement('div');
+        bEl.className=`block-item b-${block.c}${isDone?' done':''}`;
+        let exHTML=block.ex.map((x,xi)=>`<div class="ex-item"><div class="ex-num" style="background:${col[1]};color:${col[0]}">${xi+1}</div><span style="flex:1">${x.e}</span>${x.r?`<span class="ex-rx">${x.r}</span>`:''}</div>`).join('');
+        const cueHTML=block.cue?`<div class="cue"><i class="ti ti-alert-circle" style="font-size:12px;vertical-align:-1px;margin-right:4px"></i>${block.cue}</div>`:'';
+        bEl.innerHTML=`<div class="block-header"><div class="block-dot"></div><div class="block-name">${block.n}</div><div class="block-time">${block.t}</div><div class="block-check${isDone?' done':''}" data-key="${key}"><i class="ti ti-check" style="font-size:11px"></i></div></div><div class="block-detail${isBlockExp?' open':''}"><div class="ex-list">${exHTML}</div>${cueHTML}</div>`;
+        bEl.querySelector('.block-header').onclick=(e)=>{
+          if(e.target.closest('.block-check'))return;
+          expandedBlocks[key]=!expandedBlocks[key];
+          renderDays();
+        };
+        bEl.querySelector('.block-check').onclick=(e)=>{
+          e.stopPropagation();
+          completedBlocks[key]=!completedBlocks[key];
+          saveState();
+          renderDays();
+        };
+        bList.appendChild(bEl);
+      });
+    }
+    el.appendChild(card);
+  });
+}
+
+function renderProgress(){
+  const days=WEEKS[0].days;
+  let total=0,done=0;
+  days.forEach((day,di)=>day.blocks.forEach((_,bi)=>{total++;if(completedBlocks[blockKey(activeWeek,di,bi)])done++;}));
+  const pct=total>0?Math.round(done/total*100):0;
+  let streak=0;
+  for(let di=days.length-1;di>=0;di--){
+    if(days[di].blocks.some((b,bi)=>b.c==='evening'&&completedBlocks[blockKey(activeWeek,di,bi)]))streak++;else break;
+  }
+  document.getElementById('statGrid').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Blocks logged</div><div class="stat-val" style="color:var(--purple)">${done}</div><div class="stat-sub">this week</div></div>
+    <div class="stat-card"><div class="stat-label">Week progress</div><div class="stat-val" style="color:var(--green)">${pct}%</div><div class="stat-sub">completed</div></div>
+    <div class="stat-card"><div class="stat-label">Rehab streak</div><div class="stat-val" style="color:var(--amber)">${streak}</div><div class="stat-sub">consecutive days</div></div>
+    <div class="stat-card"><div class="stat-label">Current week</div><div class="stat-val" style="color:var(--blue)">${activeWeek+1}</div><div class="stat-sub">of 7</div></div>`;
+  const pillars=[
+    {n:'Morning routine',c:['morning'],color:'#60a5fa'},
+    {n:'Gym sessions',c:['workout'],color:'#4ade80'},
+    {n:'Cardio',c:['cardio'],color:'#fbbf24'},
+    {n:'Throwing',c:['throw'],color:'#f472b6'},
+    {n:'Evening rehab',c:['evening'],color:'#a78bfa'},
+    {n:'Team training',c:['training'],color:'#4ade80'}
+  ];
+  let html='';
+  pillars.forEach(p=>{
+    let pt=0,pd=0;
+    days.forEach((day,di)=>day.blocks.forEach((b,bi)=>{if(p.c.includes(b.c)){pt++;if(completedBlocks[blockKey(activeWeek,di,bi)])pd++;}}));
+    const pp=pt>0?Math.round(pd/pt*100):0;
+    html+=`<div class="pillar-row"><div class="pillar-name">${p.n}</div><div class="pillar-bar-wrap"><div class="pillar-bar" style="width:${pp}%;background:${p.color}"></div></div><div class="pillar-pct">${pp}%</div></div>`;
+  });
+  document.getElementById('pillarBars').innerHTML=html;
+}
+
+function renderGates(){
+  document.getElementById('gateList').innerHTML=GATES.map(g=>{
+    const sc=g.status==='passed'?'var(--green)':g.status==='active'?'var(--amber)':'var(--text3)';
+    const sl=g.status==='passed'?'Passed':g.status==='active'?'Active — working toward this':'Locked';
+    return `<div class="gate-card"><div class="gate-week">${g.w}</div><div class="gate-title">${g.title}</div><div class="gate-criteria">${g.criteria}</div><div class="gate-status"><div class="gate-dot" style="background:${sc}"></div><span style="color:${sc}">${sl}</span></div></div>`;
+  }).join('');
+}
+
+function renderLog(){
+  const done=Object.entries(completedBlocks).filter(([,v])=>v);
+  if(!done.length){document.getElementById('logList').innerHTML='<div class="empty-state">No sessions logged yet.<br>Tap the circle next to any block to mark it done.</div>';return;}
+  const byWD={};
+  done.forEach(([key])=>{
+    const [w,d,b]=key.split('_');
+    const label=`Week ${parseInt(w)+1} · ${WEEKS[0].days[parseInt(d)].d}`;
+    if(!byWD[label])byWD[label]=[];
+    const block=WEEKS[0].days[parseInt(d)].blocks[parseInt(b)];
+    if(block)byWD[label].push(block);
+  });
+  document.getElementById('logList').innerHTML=Object.entries(byWD).reverse().map(([date,blocks])=>{
+    const tags=blocks.map(b=>{const c=PILLAR_COLORS[b.c]||PILLAR_COLORS.rest;return `<span class="log-tag" style="background:${c[1]};color:${c[0]};margin:2px">${b.n}</span>`;}).join('');
+    return `<div class="log-entry"><div class="log-date">${date}</div><div class="log-blocks">${tags}</div></div>`;
+  }).join('');
+}
+
+function renderAll(){renderHeader();renderWeekStrip();renderDays();}
+loadState();renderAll();
+</script>
+</body>
+</html>
