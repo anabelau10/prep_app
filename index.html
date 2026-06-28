@@ -8,7 +8,13 @@
 <meta name="apple-mobile-web-app-title" content="WUCC Prep">
 <meta name="theme-color" content="#0f0f0f">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon-precomposed" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <title>WUCC Prep</title>
 <!-- no external icon font needed -->
 <style>
@@ -350,25 +356,98 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
 // ── GOOGLE SHEETS CONFIG ──
 // Paste your Apps Script web app URL here after deploying
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzcdIxEh5CskQ-p4-0gfNEznUo3qPAWmyjeXhyI0DuUpvrhL9DfkFT5eR-VCoHlyVTj/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwIfaHvA9_Sq0pXlXtIkHBjQvW2b5hjHI6j1ZEmOf7j2dzp6JsukqsYJBQmRZLrQv2p/exec';
 
+// ── SYNC QUEUE + RETRY BUFFER ──
+// Every row is pushed to a durable queue in localStorage and only removed once
+// the Apps Script confirms receipt (returns {ok:true}). Flushes on enqueue, on
+// app load, and whenever the device comes back online. Each row carries a stable
+// unique id so the server can dedupe and retries can never double-log.
+let syncQueue=[];
+let _flushing=false;
+
+function loadQueue(){
+  try{ syncQueue=JSON.parse(localStorage.getItem('wucc_syncQueue')||'[]'); }
+  catch(e){ syncQueue=[]; }
+}
+function saveQueue(){
+  try{ localStorage.setItem('wucc_syncQueue',JSON.stringify(syncQueue)); }catch(e){}
+}
+function genId(){
+  return Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
+}
+
+// Public entry point — enqueue a row and attempt a flush.
 function syncToSheets(row){
   if(!SHEETS_URL) return;
-  setSyncStatus('pending');
-  // Image ping is the most reliable cross-origin method for Apps Script.
-  // fetch() with no-cors and XMLHttpRequest both get blocked or silently dropped.
-  const params=new URLSearchParams(Object.entries(row).map(([k,v])=>[k,String(v??'')]));
-  const img=new Image();
-  img.onload=img.onerror=()=>setSyncStatus('ok');
-  img.src=`${SHEETS_URL}?${params.toString()}`;
+  const item={...row, id: row.id||genId(), _ts: new Date().toISOString()};
+  syncQueue.push(item);
+  saveQueue();
+  flushQueue();
 }
+
+async function flushQueue(){
+  if(_flushing || !SHEETS_URL) return;
+  if(!syncQueue.length){ setSyncStatus('ok'); return; }
+  if(typeof navigator!=='undefined' && navigator.onLine===false){ setSyncStatus('offline'); return; }
+  _flushing=true;
+  setSyncStatus('pending');
+  try{
+    // Send oldest-first; stop on first failure so ordering is preserved and we
+    // don't hammer a dead endpoint. Remaining items stay queued for next flush.
+    while(syncQueue.length){
+      const item=syncQueue[0];
+      let ok=false;
+      try{
+        const res=await fetch(SHEETS_URL,{
+          method:'POST',
+          // text/plain avoids a CORS preflight (Apps Script can't answer OPTIONS).
+          headers:{'Content-Type':'text/plain;charset=utf-8'},
+          body:JSON.stringify(item),
+          redirect:'follow'
+        });
+        if(res.ok){
+          const data=await res.json().catch(()=>null);
+          // Server confirms with {ok:true}. Duplicate ids also return ok:true.
+          ok=!!(data && data.ok);
+        }
+      }catch(e){ ok=false; }
+      if(ok){
+        syncQueue.shift();
+        saveQueue();
+      } else {
+        // Leave this item (and the rest) queued; retry on next trigger.
+        break;
+      }
+    }
+  } finally {
+    _flushing=false;
+  }
+  if(syncQueue.length) setSyncStatus('fail');
+  else setSyncStatus('ok');
+  if(typeof renderLog==='function') updateSyncBadge();
+}
+
+function pendingCount(){ return syncQueue.length; }
 
 function setSyncStatus(state){
   const el=document.getElementById('syncStatus');
   if(!el)return;
-  const map={ok:['sync-ok','✓ Synced'],fail:['sync-fail','Sync failed'],pending:['sync-pending','Syncing…']};
-  el.className='sync-status '+(SHEETS_URL?map[state][0]:'sync-pending');
-  el.textContent=SHEETS_URL?(map[state][1]):'Not configured';
+  if(!SHEETS_URL){ el.className='sync-status sync-pending'; el.textContent='Not configured'; return; }
+  const n=pendingCount();
+  const map={
+    ok:['sync-ok','✓ Synced'],
+    pending:['sync-pending','Syncing…'],
+    offline:['sync-pending',`⏳ ${n} pending (offline)`],
+    fail:['sync-fail',`⚠ ${n} pending — will retry`]
+  };
+  const [cls,txt]=map[state]||map.ok;
+  el.className='sync-status '+cls;
+  el.textContent=txt;
+}
+
+function updateSyncBadge(){
+  setSyncStatus(pendingCount()? 'fail' : 'ok');
 }
 
 // ── DATES ──
@@ -929,9 +1008,24 @@ function renderCreatine(){
 function toggleCreatine(){
   const today=todayKey();
   creatineLog[today]=!creatineLog[today];
-  if(!creatineLog[today]) delete creatineLog[today];
+  const taken=!!creatineLog[today];
+  if(!taken) delete creatineLog[today];
   saveState();
   renderCreatine();
+  // Log both states. id is keyed per day so the latest toggle for a given day
+  // overwrites the prior one server-side rather than stacking duplicate rows.
+  syncToSheets({
+    id:'creatine_'+today,
+    source:'creatine',
+    date:today,
+    type:'Creatine',
+    blockName:'',
+    duration:'',
+    rpe:'',
+    notes:taken?'true':'false',
+    taken:taken,
+    leftAnkle:'',rightAnkle:'',shoulder:''
+  });
 }
 
 function renderPainLog(){
@@ -1083,6 +1177,7 @@ function saveBlockDone(){
   // Sync to Sheets
   if(_blockDoneBlock && _blockDoneDate){
     syncToSheets({
+      id:'block_'+key,
       source:'block',
       date:_blockDoneDate,
       type:_blockDoneBlock.c,
@@ -1164,6 +1259,7 @@ function saveSession(){
   closeAddSession();
   renderLog();
   syncToSheets({
+    id:'custom_'+entry.id,
     source:'custom',
     date:entry.date,
     type:entry.type,
@@ -1215,15 +1311,14 @@ function quickLogThrow(){
   customSessions.push(entry);
   saveState();
   renderLog();
-  syncToSheets({source:'custom',date:entry.date,type:'Throwing',blockName:'',duration:'30',rpe:0,notes:'',leftAnkle:0,rightAnkle:0,shoulder:0});
+  syncToSheets({id:'custom_'+entry.id,source:'custom',date:entry.date,type:'Throwing',blockName:'',duration:'30',rpe:0,notes:'',leftAnkle:0,rightAnkle:0,shoulder:0});
   const btn = document.querySelector('[onclick="quickLogThrow()"]');
   if(btn){ btn.textContent = '✓ Logged'; setTimeout(()=>{ btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Throw'; }, 1500); }
 }
 
 function renderLog(){
-  // Sync status badge visibility
-  const syncEl=document.getElementById('syncStatus');
-  if(syncEl) syncEl.className='sync-status '+(SHEETS_URL?'sync-ok':'sync-pending'), syncEl.textContent=SHEETS_URL?'✓ Configured':'Not configured';
+  // Sync status badge reflects the live queue state.
+  updateSyncBadge();
 
   // Build by-date map: block completions
   const byDate={};
@@ -1306,7 +1401,13 @@ function renderLog(){
 }
 
 function renderAll(){renderHeader();renderWeekStrip();renderDays();}
-loadState();renderAll();
+loadState();loadQueue();renderAll();
+
+// Retry triggers: on load, when the device regains connectivity, and when the
+// app is brought back to the foreground (covers iOS PWA resume).
+flushQueue();
+window.addEventListener('online',flushQueue);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) flushQueue(); });
 </script>
 </body>
 </html>
