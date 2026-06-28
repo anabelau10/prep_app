@@ -350,13 +350,16 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
 // ── GOOGLE SHEETS CONFIG ──
 // Paste your Apps Script web app URL here after deploying
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxSnlXtz-Y3sTp59xho6tOqjNTNufk5LIF4LdcsDgu2XvG-LFmc6ZKq6Bp1YoIUozwX/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzQq-lsbDOqiYdoaGVpeNdL3YSyfnDdesZGB9ZWS6iYIXBoEMsO3qsiyOGk9ssenqrJ/exec';
 
 async function syncToSheets(row){
   if(!SHEETS_URL) return;
   try{
     setSyncStatus('pending');
-    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)});
+    // Apps Script requires form-encoded data for reliable cross-origin POST.
+    // JSON POST with no-cors appears to succeed but is silently rejected by Google.
+    const body=new URLSearchParams({data:JSON.stringify(row)});
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',body});
     setSyncStatus('ok');
   }catch(e){
     setSyncStatus('fail');
