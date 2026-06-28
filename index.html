@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WUCC Prep">
+<meta name="theme-color" content="#0f0f0f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>WUCC Prep</title>
+<!-- no external icon font needed -->
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f0f0f;--surface:#1a1a1a;--surface2:#232323;--surface3:#2a2a2a;
+  --border:#2e2e2e;--border2:#3a3a3a;
+  --text:#f0efe8;--text2:#9a9890;--text3:#5a5958;
+  --green:#4ade80;--green-bg:#0d2318;--green-border:#1a4a2e;
+  --amber:#fbbf24;--amber-bg:#1f1700;--amber-border:#3d2e00;
+  --blue:#60a5fa;--blue-bg:#0a1628;--blue-border:#1a3050;
+  --purple:#a78bfa;--purple-bg:#150d28;--purple-border:#2d1f50;
+  --pink:#f472b6;--pink-bg:#1f0a14;--pink-border:#3d1428;
+  --red:#f87171;--red-bg:#1f0a0a;--red-border:#3d1414;
+  --radius:10px;--radius-sm:6px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;line-height:1.5;overscroll-behavior:none}
+.app{max-width:480px;margin:0 auto;padding:0 0 88px;min-height:100vh}
+.header{padding:env(safe-area-inset-top,20px) 16px 0;padding-top:max(env(safe-area-inset-top),20px)}
+.header-inner{display:flex;align-items:center;justify-content:space-between;padding-top:8px}
+.header-title{font-size:20px;font-weight:700;letter-spacing:-.03em}
+.header-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.wucc-badge{font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;background:var(--purple-bg);border:0.5px solid var(--purple-border);color:var(--purple);white-space:nowrap}
+.week-strip{display:flex;gap:6px;padding:16px 16px 0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.week-strip::-webkit-scrollbar{display:none}
+.wk{min-width:56px;padding:9px 4px;border-radius:var(--radius-sm);border:0.5px solid var(--border);background:var(--surface);cursor:pointer;text-align:center;transition:all .15s;flex-shrink:0;-webkit-tap-highlight-color:transparent}
+.wk.active{background:var(--purple-bg);border-color:var(--purple-border)}
+.wk-num{font-size:12px;font-weight:600;color:var(--text2)}
+.wk.active .wk-num{color:var(--purple)}
+.wk-dates{font-size:9px;color:var(--text3);margin-top:2px}
+.phase-bar{margin:14px 16px 0;padding:11px 14px;border-radius:var(--radius);background:var(--surface);border:0.5px solid var(--border)}
+.phase-name{font-size:12px;font-weight:600;color:var(--purple)}
+.phase-note{font-size:11px;color:var(--text2);margin-top:3px;line-height:1.45}
+.section-head{padding:16px 16px 8px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.day-list{padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.day-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .15s;-webkit-tap-highlight-color:transparent}
+.day-card.expanded{border-color:var(--border2)}
+.day-card.today-card{border-color:var(--purple-border)}
+.day-head{padding:13px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.day-name{font-size:14px;font-weight:600;flex:1}
+.day-date{font-size:10px;color:var(--text3);margin-top:1px}
+.today-pip{width:6px;height:6px;border-radius:50%;background:var(--purple);flex-shrink:0}
+.day-type-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px}
+.tag-training{background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)}
+.tag-match{background:var(--red-bg);color:var(--red);border:0.5px solid var(--red-border)}
+.tag-rest{background:var(--surface2);color:var(--text2);border:0.5px solid var(--border)}
+.tag-taper{background:var(--amber-bg);color:var(--amber);border:0.5px solid var(--amber-border)}
+.day-done-count{font-size:11px;color:var(--text3)}
+.day-chevron{color:var(--text3);transition:transform .2s;flex-shrink:0}
+.block-list{padding:0 12px 12px;display:flex;flex-direction:column;gap:6px}
+.block-item{border-radius:var(--radius-sm);overflow:hidden;border:0.5px solid transparent;transition:opacity .15s;-webkit-tap-highlight-color:transparent}
+.block-item.done{opacity:.45}
+.block-header{display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;user-select:none}
+.block-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.block-name{font-size:12px;font-weight:600;flex:1}
+.block-time{font-size:10px;color:var(--text3);flex-shrink:0}
+.block-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.block-check.done{background:var(--green);border-color:var(--green)}
+.block-check.done i{color:#0d2318}
+.block-detail{padding:0 10px 10px;display:none}
+.block-detail.open{display:block}
+.ex-list{display:flex;flex-direction:column;gap:3px}
+.ex-item{display:flex;align-items:flex-start;gap:8px;font-size:11px;color:var(--text2);padding:4px 0;border-bottom:0.5px solid var(--border)}
+.ex-item:last-child{border-bottom:none}
+.ex-num{width:15px;height:15px;border-radius:50%;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.ex-rx{margin-left:auto;font-size:10px;color:var(--text3);flex-shrink:0;padding-left:6px;white-space:nowrap}
+.cue{margin-top:7px;padding:7px 9px;border-radius:var(--radius-sm);font-size:11px;line-height:1.45;color:var(--amber);background:var(--amber-bg);border:0.5px solid var(--amber-border)}
+.b-morning{background:rgba(96,165,250,.07);border-color:rgba(96,165,250,.18)}
+.b-morning .block-dot{background:var(--blue)}
+.b-morning .block-name{color:var(--blue)}
+.b-workout{background:rgba(74,222,128,.07);border-color:rgba(74,222,128,.18)}
+.b-workout .block-dot{background:var(--green)}
+.b-workout .block-name{color:var(--green)}
+.b-cardio{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.18)}
+.b-cardio .block-dot{background:var(--amber)}
+.b-cardio .block-name{color:var(--amber)}
+.b-throw{background:rgba(244,114,182,.07);border-color:rgba(244,114,182,.18)}
+.b-throw .block-dot{background:var(--pink)}
+.b-throw .block-name{color:var(--pink)}
+.b-evening{background:rgba(167,139,250,.07);border-color:rgba(167,139,250,.18)}
+.b-evening .block-dot{background:var(--purple)}
+.b-evening .block-name{color:var(--purple)}
+.b-training{background:rgba(74,222,128,.07);border-color:rgba(74,222,128,.18)}
+.b-training .block-dot{background:var(--green)}
+.b-training .block-name{color:var(--green)}
+.b-match{background:rgba(248,113,113,.07);border-color:rgba(248,113,113,.18)}
+.b-match .block-dot{background:var(--red)}
+.b-match .block-name{color:var(--red)}
+.b-rest{background:var(--surface2);border-color:var(--border)}
+.b-rest .block-dot{background:var(--text3)}
+.b-rest .block-name{color:var(--text2)}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--surface);border-top:0.5px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom,0)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:10px 0 8px;color:var(--text3);transition:color .15s;background:none;border:none;-webkit-tap-highlight-color:transparent}
+.nav-btn.active{color:var(--purple)}
+.nav-btn svg{width:22px;height:22px}
+.nav-btn span{font-size:10px;font-weight:500}
+/* Progress tab */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;padding:0 16px}
+.stat-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:13px 14px}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:5px}
+.stat-val{font-size:26px;font-weight:700;letter-spacing:-.03em}
+.stat-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.pillar-section{padding:0 16px 16px}
+.pillar-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border)}
+.pillar-row:last-child{border-bottom:none}
+.pillar-name{font-size:12px;font-weight:500;flex:1;color:var(--text)}
+.pillar-bar-wrap{width:72px;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.pillar-bar{height:100%;border-radius:3px;transition:width .5s}
+.pillar-pct{font-size:11px;color:var(--text3);width:28px;text-align:right}
+/* Creatine tracker */
+.creatine-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px}
+.creatine-card.taken{border-color:var(--green-border);background:var(--green-bg)}
+.creatine-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.creatine-label{font-size:13px;font-weight:600;color:var(--text)}
+.creatine-streak{font-size:11px;color:var(--text3)}
+.creatine-btn{width:100%;padding:10px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;border:none;-webkit-tap-highlight-color:transparent;transition:all .2s}
+.creatine-btn.untaken{background:var(--surface2);color:var(--purple);border:0.5px solid var(--purple-border)}
+.creatine-btn.taken{background:var(--green);color:#0d2318}
+.creatine-dots{display:flex;gap:5px;margin-top:10px;flex-wrap:wrap}
+.creatine-dot{width:10px;height:10px;border-radius:50%}
+/* Pain log */
+.pain-log-section{padding:0 16px 16px}
+.pain-entry{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:8px}
+.pain-entry-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.pain-entry-title{font-size:12px;font-weight:600;color:var(--text)}
+.pain-entry-time{font-size:10px;color:var(--text3)}
+.pain-sliders{display:flex;flex-direction:column;gap:10px}
+.pain-row{display:flex;align-items:center;gap:10px}
+.pain-label{font-size:11px;color:var(--text2);width:80px;flex-shrink:0}
+.pain-slider{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;outline:none;cursor:pointer}
+.pain-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--purple);cursor:pointer;border:2px solid var(--bg)}
+.pain-val{font-size:11px;font-weight:600;width:20px;text-align:right;color:var(--purple)}
+.pain-save-btn{margin-top:12px;width:100%;padding:9px;border-radius:var(--radius-sm);background:var(--purple-bg);border:0.5px solid var(--purple-border);color:var(--purple);font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pain-saved{font-size:11px;color:var(--green);text-align:center;margin-top:8px;display:none}
+.pain-history{margin-top:4px}
+.pain-hist-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:11px}
+.pain-hist-row:last-child{border-bottom:none}
+.pain-hist-date{color:var(--text3);width:90px;flex-shrink:0}
+.pain-hist-dots{display:flex;gap:6px;flex:1}
+.pain-dot{width:7px;height:7px;border-radius:50%}
+.pain-hist-vals{font-size:10px;color:var(--text2)}
+/* Gates tab */
+.gate-list{padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.gate-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.gate-card.gate-active{border-color:var(--amber-border)}
+.gate-card.gate-passed{border-color:var(--green-border)}
+.gate-week{font-size:10px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.gate-title{font-size:13px;font-weight:600;margin-bottom:6px;color:var(--text)}
+.gate-criteria{font-size:11px;color:var(--text2);line-height:1.55}
+.gate-status{display:flex;align-items:center;gap:6px;margin-top:9px;font-size:11px;font-weight:500}
+.gate-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.gate-toggle{font-size:10px;padding:3px 10px;border-radius:20px;border:none;cursor:pointer;margin-top:8px;font-weight:600;-webkit-tap-highlight-color:transparent}
+/* Log tab */
+.log-list{padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.log-entry{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.log-date{font-size:11px;color:var(--text3);margin-bottom:7px;font-weight:600}
+.log-blocks{display:flex;flex-wrap:wrap;gap:5px}
+.log-tag{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px}
+.empty-state{font-size:13px;color:var(--text3);padding:32px 0;text-align:center;line-height:1.6}
+.add-session-btn{margin:0 16px 8px;width:calc(100% - 32px);padding:11px;border-radius:var(--radius);background:var(--surface);border:0.5px dashed var(--border2);color:var(--purple);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;-webkit-tap-highlight-color:transparent}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-width:480px;padding:20px 16px;padding-bottom:max(20px,env(safe-area-inset-bottom));max-height:85vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px}
+.form-field{margin-bottom:14px}
+.form-label{font-size:11px;color:var(--text2);margin-bottom:6px;display:block;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.form-input{width:100%;background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:13px;outline:none;-webkit-appearance:none}
+.form-input:focus{border-color:var(--purple-border)}
+.form-select{width:100%;background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:13px;outline:none;-webkit-appearance:none;appearance:none}
+.form-textarea{width:100%;background:var(--surface2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text);font-size:13px;outline:none;resize:none;min-height:70px;font-family:inherit}
+.modal-btns{display:flex;gap:8px;margin-top:16px}
+.btn-cancel{flex:1;padding:11px;border-radius:var(--radius-sm);background:var(--surface2);border:0.5px solid var(--border2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer}
+.btn-save{flex:2;padding:11px;border-radius:var(--radius-sm);background:var(--purple);border:none;color:#150d28;font-size:13px;font-weight:600;cursor:pointer}
+.log-custom-badge{font-size:9px;padding:2px 6px;border-radius:10px;background:var(--blue-bg);color:var(--blue);border:0.5px solid var(--blue-border);margin-left:6px;vertical-align:middle}
+.log-notes{font-size:11px;color:var(--text2);margin-top:5px;line-height:1.4}
+.log-pain-row{display:flex;gap:8px;margin-top:5px;flex-wrap:wrap}
+.log-pain-chip{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+.rpe-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:var(--purple-bg);color:var(--purple);border:0.5px solid var(--purple-border);flex-shrink:0}
+.log-entry-actions{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)}
+.log-action-btn{font-size:10px;font-weight:600;padding:4px 10px;border-radius:20px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.log-edit-btn{background:var(--surface2);color:var(--text2);border:0.5px solid var(--border2)}
+.log-delete-btn{background:var(--red-bg);color:var(--red);border:0.5px solid var(--red-border)}
+.rpe-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--text3);margin-top:3px}
+.sync-status{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.sync-ok{background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)}
+.sync-fail{background:var(--red-bg);color:var(--red);border:0.5px solid var(--red-border)}
+.sync-pending{background:var(--amber-bg);color:var(--amber);border:0.5px solid var(--amber-border)}
+.sheets-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px}
+.sheets-label{font-size:11px;color:var(--text2)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="viewHome">
+    <div class="header">
+      <div class="header-inner">
+        <div>
+          <div class="header-title">WUCC Prep</div>
+          <div class="header-sub" id="headerSub"></div>
+        </div>
+        <div class="wucc-badge" id="wuccCountdown"></div>
+      </div>
+    </div>
+    <div class="week-strip" id="weekStrip"></div>
+    <div class="phase-bar">
+      <div class="phase-name" id="phaseName"></div>
+      <div class="phase-note" id="phaseNote"></div>
+    </div>
+    <div class="section-head" id="weekLabel"></div>
+    <div class="day-list" id="dayList"></div>
+  </div>
+
+  <div id="viewProgress" style="display:none">
+    <div class="header"><div class="header-inner"><div><div class="header-title">Progress</div></div></div></div>
+    <div class="section-head">This week at a glance</div>
+    <div class="stat-grid" id="statGrid"></div>
+    <div class="section-head">Creatine</div>
+    <div style="padding:0 16px 16px" id="creatineSection"></div>
+    <div class="section-head">Pain log</div>
+    <div class="pain-log-section" id="painLogSection"></div>
+    <div class="section-head">Pillars — week completion</div>
+    <div class="pillar-section" id="pillarBars"></div>
+  </div>
+
+  <div id="viewGates" style="display:none">
+    <div class="header"><div class="header-inner"><div><div class="header-title">Return-to-play gates</div></div></div></div>
+    <div class="section-head">Criteria-based progression</div>
+    <div class="gate-list" id="gateList"></div>
+  </div>
+
+  <div id="viewLog" style="display:none">
+    <div class="header"><div class="header-inner"><div><div class="header-title">Session log</div></div></div></div>
+    <div class="sheets-bar">
+      <span class="sheets-label">Google Sheets sync</span>
+      <span class="sync-status sync-pending" id="syncStatus">Not configured</span>
+    </div>
+    <div style="display:flex;gap:8px;padding:0 16px 8px">
+      <button class="add-session-btn" style="margin:0;flex:2" onclick="openAddSession(null)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Log a session</button>
+      <button class="add-session-btn" style="margin:0;flex:1;color:var(--pink);border-color:rgba(244,114,182,.3)" onclick="quickLogThrow()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Throw</button>
+    </div>
+    <div class="section-head">All sessions</div>
+    <div class="log-list" id="logList"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="navHome" onclick="switchView('Home')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Plan</span></button>
+  <button class="nav-btn" id="navProgress" onclick="switchView('Progress')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Progress</span></button>
+  <button class="nav-btn" id="navGates" onclick="switchView('Gates')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg><span>Gates</span></button>
+  <button class="nav-btn" id="navLog" onclick="switchView('Log')"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Log</span></button>
+</nav>
+
+<!-- Add / Edit session modal -->
+<div class="modal-overlay" id="addSessionModal">
+  <div class="modal">
+    <div class="modal-title" id="sessionModalTitle">Log a session</div>
+    <input type="hidden" id="sessionEditId">
+    <div class="form-field">
+      <label class="form-label">Date</label>
+      <input type="date" class="form-input" id="sessionDate">
+    </div>
+    <div class="form-field">
+      <label class="form-label">Type</label>
+      <select class="form-select" id="sessionType">
+        <option value="Training">Training</option>
+        <option value="Gym">Gym</option>
+        <option value="Cardio">Cardio</option>
+        <option value="Mobility">Mobility</option>
+        <option value="Throwing">Throwing</option>
+        <option value="Match">Match / Scrim</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Duration (mins)</label>
+      <input type="number" class="form-input" id="sessionDuration" placeholder="60">
+    </div>
+    <div class="form-field">
+      <label class="form-label">RPE — session effort (0 = rest, 10 = max)</label>
+      <div class="pain-row">
+        <input type="range" class="pain-slider" id="mRPE" min="0" max="10" value="0" oninput="updV('mRPE','vRPE')">
+        <span class="pain-val" id="vRPE" style="color:var(--purple)">0</span>
+      </div>
+      <div class="rpe-labels"><span>Rest</span><span>Easy</span><span>Moderate</span><span>Hard</span><span>Max</span></div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Notes</label>
+      <textarea class="form-textarea" id="sessionNotes" placeholder="How did it feel? Any pain or issues?"></textarea>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Pain at end of session (0 = none)</label>
+      <div class="pain-sliders">
+        <div class="pain-row"><span class="pain-label">Left ankle</span><input type="range" class="pain-slider" id="mLA" min="0" max="10" value="0" oninput="updV('mLA','vLA')"><span class="pain-val" id="vLA">0</span></div>
+        <div class="pain-row"><span class="pain-label">Right ankle</span><input type="range" class="pain-slider" id="mRA" min="0" max="10" value="0" oninput="updV('mRA','vRA')"><span class="pain-val" id="vRA">0</span></div>
+        <div class="pain-row"><span class="pain-label">Shoulder</span><input type="range" class="pain-slider" id="mSH" min="0" max="10" value="0" oninput="updV('mSH','vSH')"><span class="pain-val" id="vSH">0</span></div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAddSession()">Cancel</button>
+      <button class="btn-save" onclick="saveSession()">Save session</button>
+    </div>
+  </div>
+</div>
+
+<!-- Block completion modal — RPE + notes when ticking a block -->
+<div class="modal-overlay" id="blockDoneModal">
+  <div class="modal">
+    <div class="modal-title" id="blockDoneTitle">Block complete</div>
+    <input type="hidden" id="blockDoneKey">
+    <div class="form-field">
+      <label class="form-label">RPE — how hard was it? (0 = rest, 10 = max)</label>
+      <div class="pain-row">
+        <input type="range" class="pain-slider" id="bdRPE" min="0" max="10" value="5" oninput="updV('bdRPE','vBdRPE')">
+        <span class="pain-val" id="vBdRPE" style="color:var(--purple)">5</span>
+      </div>
+      <div class="rpe-labels"><span>Rest</span><span>Easy</span><span>Moderate</span><span>Hard</span><span>Max</span></div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Notes (optional)</label>
+      <textarea class="form-textarea" id="bdNotes" placeholder="How did it feel? Anything to flag?"></textarea>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Pain at end (0 = none)</label>
+      <div class="pain-sliders">
+        <div class="pain-row"><span class="pain-label">Left ankle</span><input type="range" class="pain-slider" id="bdLA" min="0" max="10" value="0" oninput="updV('bdLA','vBdLA')"><span class="pain-val" id="vBdLA">0</span></div>
+        <div class="pain-row"><span class="pain-label">Right ankle</span><input type="range" class="pain-slider" id="bdRA" min="0" max="10" value="0" oninput="updV('bdRA','vBdRA')"><span class="pain-val" id="vBdRA">0</span></div>
+        <div class="pain-row"><span class="pain-label">Shoulder</span><input type="range" class="pain-slider" id="bdSH" min="0" max="10" value="0" oninput="updV('bdSH','vBdSH')"><span class="pain-val" id="vBdSH">0</span></div>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeBlockDoneModal()">Skip</button>
+      <button class="btn-save" onclick="saveBlockDone()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js').catch(()=>{});});}
+
+// ── GOOGLE SHEETS CONFIG ──
+// Paste your Apps Script web app URL here after deploying
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxSnlXtz-Y3sTp59xho6tOqjNTNufk5LIF4LdcsDgu2XvG-LFmc6ZKq6Bp1YoIUozwX/exec';
+
+async function syncToSheets(row){
+  if(!SHEETS_URL) return;
+  try{
+    setSyncStatus('pending');
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(row)});
+    setSyncStatus('ok');
+  }catch(e){
+    setSyncStatus('fail');
+  }
+}
+
+function setSyncStatus(state){
+  const el=document.getElementById('syncStatus');
+  if(!el)return;
+  const map={ok:['sync-ok','✓ Synced'],fail:['sync-fail','Sync failed'],pending:['sync-pending','Syncing…']};
+  el.className='sync-status '+(SHEETS_URL?map[state][0]:'sync-pending');
+  el.textContent=SHEETS_URL?(map[state][1]):'Not configured';
+}
+
+// ── DATES ──
+// Parse 'YYYY-MM-DD' strings as LOCAL midnight, not UTC midnight.
+// Without this, BST (UTC+1) shifts every date back one day when rendering.
+function localDate(str){
+  const [y,m,d]=str.split('-').map(Number);
+  return new Date(y,m-1,d);
+}
+const WUCC_START = localDate('2026-08-15');
+
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function fmtDate(d){return d.toLocaleDateString('en-GB',{day:'numeric',month:'short'});}
+function dateKey(d){
+  // Return YYYY-MM-DD in local time
+  const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),dd=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+function todayKey(){return dateKey(new Date());}
+function daysUntilWUCC(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const diff=Math.ceil((WUCC_START-today)/(1000*60*60*24));
+  return Math.max(0,diff);
+}
+
+// Derive each day's correct date from the week's startDate + day index.
+// The hardcoded day.date fields in WEEKS data are all off by one day (a data entry error),
+// so we ignore them and compute the correct date here instead.
+function dayDate(weekIndex, dayIndex){
+  return addDays(localDate(WEEKS[weekIndex].startDate), dayIndex);
+}
+function dayDateKey(weekIndex, dayIndex){
+  return dateKey(dayDate(weekIndex, dayIndex));
+}
+const WEEKS = [
+  {
+    num:1,label:'Week 1',phase:'Deload & Settle',
+    note:'Left foot in full deload. Zero lower-limb load. Upper body gym, bike cardio, core/mobility work. Build the daily routine habit.',
+    startDate:'2026-06-29',
+    days:[
+      {d:'Monday',date:'2026-06-30',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs — slow full circles',r:'5 min'},{e:'Ankle CARs — pain-free range only',r:'3 min'},{e:'Toe spread + short foot hold x10',r:'3 min'},{e:'90/90 hip sit, both sides',r:'4 min'},{e:'Thoracic cat-cow x10 + bed extension',r:'3 min'}],cue:null},
+        {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand — wrist snap x50',r:''},{e:'Stationary forehand — release point x50',r:''},{e:'Hammer mechanics, slow x20',r:''},{e:'Target drill: cones at 10m and 20m',r:''}],cue:'Pivot foot stays planted. No lunging. Left foot stationary only.'},
+        {c:'training',n:'Deep Space training',t:'20:00–22:00',ex:[{e:'Warm up with team — no jumping or cutting',r:''},{e:'Stationary throwing reps between drills',r:''},{e:'Call plays and cuts from position',r:''}],cue:'Protect the left foot. No explosive movement.'},
+        {c:'evening',n:'Evening rehab',t:'~26 min',ex:[{e:'Golf ball plantar fascia roll',r:'3 min'},{e:'Tibialis anterior activation — seated, slow',r:'3 min'},{e:'Soleus stretch — bent knee wall x45s each',r:'3 min'},{e:'Clamshells with band x20 each side',r:'4 min'},{e:'Supine bridge + abduction band x15',r:'3 min'},{e:'Journal: 1 win, 1 learning, 1 intention',r:'5 min'}],cue:null}
+      ]},
+      {d:'Tuesday',date:'2026-07-01',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90 hip sit',r:'4 min'},{e:'Thoracic cat-cow + extension',r:'3 min'}],cue:null},
+        {c:'cardio',n:'Bike — Zone 2',t:'~40 min',ex:[{e:'Warm up 5 min easy',r:''},{e:'Steady state Zone 2 — 125–140 bpm',r:'30 min'},{e:'Cool down 5 min',r:''}],cue:'Easy effort. Aerobic base work — keep it conversational.'},
+        {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each side',r:'3 sets'},{e:'Pallof press x10 each side',r:'3 sets'},{e:'Copenhagen plank hold x20s each',r:'3 sets'},{e:'90/90 hip rotation — slow',r:'5 min'},{e:'Couch stretch x60s each side',r:''},{e:'Thread the needle x5 each side',r:''}],cue:'Copenhagen: weight through elbow and inside top knee — zero foot contact on floor.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Wednesday',date:'2026-07-02',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Upper body gym — Push/Pull A',t:'~65 min',ex:[{e:'Shoulder CARs warm-up x10',r:''},{e:'Landmine press',r:'4x8 RPE 7'},{e:'DB shoulder press',r:'3x10 RPE 7'},{e:'Lat pulldown',r:'4x8'},{e:'Seated cable row',r:'3x12'},{e:'Face pulls',r:'3x15'},{e:'Dead bug',r:'3x8 each'}],cue:'Rib-down brace on all pressing. RPE cap at 8 — Bacon\'s training tonight.'},
+        {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Breaking the mark — stationary pivot x20 each',r:''}],cue:'Pre-training sharpening. 30 min max.'},
+        {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Modified warm-up — flag to coach',r:''},{e:'Tactical engagement: call plays, direct stack',r:''},{e:'No explosive cutting or jumping',r:''}],cue:'Two sessions today. Eat and hydrate between gym and training.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Thursday',date:'2026-07-03',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each side',r:'3 sets'},{e:'Pallof press x10 each side',r:'3 sets'},{e:'Side plank hold x25s each',r:'3 sets'},{e:'Greatest stretch x5 each side',r:''},{e:'Hip flexor stretch x60s each',r:''},{e:'Doorframe pec stretch x45s each',r:''}],cue:'Rest day movement. Keep it gentle — no high effort.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Friday',date:'2026-07-04',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Upper body gym — Pull/Core B',t:'~55 min',ex:[{e:'Single-arm DB row',r:'4x10 each'},{e:'Lat pulldown',r:'3x8'},{e:'Face pulls',r:'3x15'},{e:'Side-lying external rotation',r:'3x12 each'},{e:'Dead bug',r:'3x8 each'},{e:'Copenhagen plank hold',r:'3x20s each'}],cue:'Copenhagen: zero foot load. Stop if hip pain.'},
+        {c:'cardio',n:'Bike — Zone 3',t:'~40 min',ex:[{e:'Warm up 5 min',r:''},{e:'Zone 3 steady — 140–155 bpm',r:'30 min'},{e:'Cool down 5 min',r:''}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Saturday',date:'2026-07-05',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'cardio',n:'Bike intervals',t:'~40 min',ex:[{e:'Warm up 8 min easy',r:''},{e:'6x2 min hard / 2 min easy — Zone 4',r:''},{e:'Cool down 8 min',r:''}],cue:'RPE 8/10 on work intervals. Hardest session of the week.'},
+        {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each side',r:'3 sets'},{e:'Pallof press x10 each side',r:'3 sets'},{e:'Copenhagen plank x20s each',r:'3 sets'},{e:'90/90 hip rotation',r:'5 min'},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension over bed',r:'3 min'}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Sunday',date:'2026-07-06',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'rest',n:'Game sense + recovery',t:'~20 min',ex:[{e:'Watch 15 min game film — annotate 3 decisions',r:''},{e:'Review one Iceni set play',r:''},{e:'Mental reps: 3 defensive sequences',r:''}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]}
+    ]
+  },
+  {
+    num:2,label:'Week 2',phase:'Deload & Settle',
+    note:'Continue upper body and bike. Physio session this week — get lower limb clearance. Core/mobility sessions step up slightly. Jul 11 light classroom + training session.',
+    startDate:'2026-07-07',
+    days:[
+      {d:'Monday',date:'2026-07-07',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand — wrist snap x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Target drill: cones at 10m and 20m',r:''}],cue:'Pivot foot stays planted. Left foot stationary.'},
+        {c:'training',n:'Deep Space training',t:'20:00–22:00',ex:[{e:'Modified warm-up — protect left foot',r:''},{e:'Stationary throwing between drills',r:''},{e:'Tactical engagement only',r:''}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Tuesday',date:'2026-07-08',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'cardio',n:'Bike — Zone 2',t:'~45 min',ex:[{e:'Warm up 5 min',r:''},{e:'Zone 2 — 125–140 bpm',r:'35 min'},{e:'Cool down 5 min',r:''}],cue:null},
+        {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each side',r:'3 sets'},{e:'Pallof press x10 each',r:'3 sets'},{e:'Copenhagen plank x20s each',r:'3 sets'},{e:'Greatest stretch x5 each',r:''},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension over bed',r:'3 min'}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Wednesday',date:'2026-07-09',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Upper body gym — Push/Pull A',t:'~65 min',ex:[{e:'Shoulder CARs warm-up x10',r:''},{e:'Landmine press',r:'4x8 RPE 7'},{e:'DB shoulder press',r:'3x10'},{e:'Lat pulldown',r:'4x8'},{e:'Seated cable row',r:'3x12'},{e:'Face pulls',r:'3x15'},{e:'Dead bug',r:'3x8 each'}],cue:'Slight load increase from week 1 where it felt easy. RPE 7–8.'},
+        {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Breaking the mark x20 each',r:''}],cue:'Pre-training sharpening. 30 min max.'},
+        {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Modified warm-up',r:''},{e:'Tactical engagement: lead defensive sets',r:''},{e:'No explosive movement',r:''}],cue:'Two-session day. Manage energy.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Thursday',date:'2026-07-10',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'cardio',n:'Bike — Zone 2',t:'~45 min',ex:[{e:'Warm up 5 min',r:''},{e:'Zone 2 — 125–140 bpm',r:'35 min'},{e:'Cool down 5 min',r:''}],cue:null},
+        {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each side',r:'3 sets'},{e:'Pallof press x10 each',r:'3 sets'},{e:'Side plank x25s each',r:'3 sets'},{e:'Hip flexor stretch x60s each',r:''},{e:'Thread the needle x5 each',r:''},{e:'Doorframe pec stretch x45s each',r:''}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Friday',date:'2026-07-11',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'training',n:'Iceni — Classroom + Training',t:'13:00–17:00',ex:[{e:'1pm–2pm: classroom session',r:''},{e:'2pm–5pm: pitch session — modified participation',r:''},{e:'Focus on tactical awareness and communication',r:''}],cue:'Light/social session. Good opportunity for throwing and low-intensity movement.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Saturday',date:'2026-07-12',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Upper body gym — Pull/Core B',t:'~55 min',ex:[{e:'Single-arm DB row',r:'4x10 each'},{e:'Lat pulldown',r:'3x8'},{e:'Face pulls',r:'3x15'},{e:'Side-lying ER',r:'3x12 each'},{e:'Dead bug',r:'3x8 each'},{e:'Copenhagen plank',r:'3x20s each'}],cue:null},
+        {c:'workout',n:'Core + mobility',t:'~30 min',ex:[{e:'90/90 hip rotation — slow',r:'5 min'},{e:'Greatest stretch x5 each',r:''},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension over bed',r:'3 min'},{e:'Doorframe pec stretch x45s each',r:''}],cue:'Post-gym mobility only — no loaded core work after gym session.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Sunday',date:'2026-07-13',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'rest',n:'Rest + prep',t:'Flexible',ex:[{e:'Game film — 15 min',r:''},{e:'Review Regionals game plan with Iceni',r:''}],cue:'Regionals starts Friday. Last full rest day before travel. Prioritise sleep.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]}
+    ]
+  },
+  {
+    num:3,label:'Week 3',phase:'Regionals + Recovery',
+    note:'Jul 14 Pod. Jul 16 final Bacon\'s. Jul 18–20 UKU Regionals. Protect the foot. Post-tournament deload from Monday.',
+    startDate:'2026-07-14',
+    days:[
+      {d:'Monday',date:'2026-07-14',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs — pain-free only',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'training',n:'Iceni — Pod session',t:'18:30–19:30',ex:[{e:'Small group tactical work',r:''},{e:'Throwing focus — no cutting',r:''}],cue:'Regionals in 4 days. Light only.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Tuesday',date:'2026-07-15',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'cardio',n:'Bike — short and easy',t:'~25 min',ex:[{e:'Easy Zone 2 only — 125–135 bpm',r:'20 min'}],cue:'Pre-tournament week. No intensity.'},
+        {c:'workout',n:'Core + mobility — light',t:'~25 min',ex:[{e:'Dead bug x8 each',r:'2 sets'},{e:'90/90 hip rotation',r:'5 min'},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension over bed',r:'3 min'}],cue:'Pre-tournament. Light movement only — no loading.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Wednesday',date:'2026-07-16',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'throw',n:'Throwing drills',t:'~20 min',ex:[{e:'Stationary backhand x30',r:''},{e:'Stationary forehand x30',r:''},{e:'Release point check — no hammers',r:''}],cue:'Shortened session — 48h before Regionals. Light touch only.'},
+        {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Final session before Regionals',r:''},{e:'Set play walkthroughs only',r:''},{e:'No full effort',r:''}],cue:'48h before Regionals. Light only. Do not load the foot.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Thursday',date:'2026-07-17',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'rest',n:'Travel / prep day',t:'Flexible',ex:[{e:'Pack kit, food, recovery tools',r:''},{e:'10 min visualisation: defensive reads at Regionals',r:''},{e:'Sleep 8+ hours tonight',r:''}],cue:'Regionals tomorrow. Zero training. Eat well, hydrate, sleep.'}
+      ]},
+      {d:'Friday',date:'2026-07-18',type:'match',blocks:[
+        {c:'match',n:'UKU Regionals — Day 1',t:'Oxford RFC',ex:[{e:'Team warm-up',r:''},{e:'Pool play games',r:''},{e:'Post-day: foot check — note pain levels',r:''}],cue:'Tape decisions: discuss with physio/medic before. Rigid taping restricts midtarsal movement — weigh risk vs benefit.'}
+      ]},
+      {d:'Saturday',date:'2026-07-19',type:'match',blocks:[
+        {c:'match',n:'UKU Regionals — Day 2',t:'Oxford RFC',ex:[{e:'Team warm-up',r:''},{e:'Elimination / bracket games',r:''},{e:'Post-day: ice and elevation if needed',r:''}],cue:null}
+      ]},
+      {d:'Sunday',date:'2026-07-20',type:'match',blocks:[
+        {c:'match',n:'UKU Regionals — Day 3',t:'Oxford RFC',ex:[{e:'Finals day',r:''},{e:'Post-tournament: full foot and ankle assessment',r:''}],cue:'Log pain levels carefully tonight. Sets the baseline for week 4 recovery.'}
+      ]}
+    ]
+  },
+  {
+    num:4,label:'Week 4',phase:'Post-Regionals Recovery',
+    note:'Mandatory deload after Regionals. Assess foot response. Return to bike and upper body from Wednesday if foot held up. Core/mobility continues throughout.',
+    startDate:'2026-07-21',
+    days:[
+      {d:'Monday',date:'2026-07-21',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs — pain-free only',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'rest',n:'Full rest — assess',t:'Flexible',ex:[{e:'Log morning pain scores carefully',r:''},{e:'Light walk only if pain-free at rest',r:''},{e:'Ice and elevation if any swelling',r:''}],cue:'Post-tournament day 1. Do nothing. Eat, sleep, assess.'}
+      ]},
+      {d:'Tuesday',date:'2026-07-22',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Core + mobility — gentle',t:'~25 min',ex:[{e:'Dead bug x6 each — slow',r:'2 sets'},{e:'90/90 hip rotation',r:'5 min'},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension over bed',r:'3 min'}],cue:'Post-tournament. Gentle only.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Wednesday',date:'2026-07-23',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Upper body gym — light return',t:'~50 min',ex:[{e:'Landmine press',r:'3x8 RPE 6'},{e:'Lat pulldown',r:'3x8'},{e:'Face pulls',r:'3x15'},{e:'Dead bug',r:'3x8 each'},{e:'Copenhagen plank',r:'3x20s'}],cue:'Return session. Leave something in the tank.'},
+        {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Breaking the mark x20 each',r:''}],cue:'First throwing back post-Regionals. Note any shoulder or grip fatigue.'},
+        {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Return to team training — modified',r:''},{e:'Assess foot response to being on pitch',r:''}],cue:'First session back post-Regionals. Communicate clearly to captain about your status.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Thursday',date:'2026-07-24',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'cardio',n:'Bike — Zone 2 return',t:'~35 min',ex:[{e:'Easy Zone 2 — 125–140 bpm',r:'25 min'}],cue:'First cardio post-Regionals. Easy only.'},
+        {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each',r:'3 sets'},{e:'Pallof press x10 each',r:'3 sets'},{e:'Side plank x25s each',r:'3 sets'},{e:'Greatest stretch x5 each',r:''},{e:'Hip flexor stretch x60s each',r:''},{e:'Thread the needle x5 each',r:''}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Friday',date:'2026-07-25',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Upper body gym — Pull/Core B',t:'~55 min',ex:[{e:'Single-arm DB row',r:'3x10 each'},{e:'Lat pulldown',r:'3x8'},{e:'Face pulls',r:'3x15'},{e:'Side-lying ER',r:'3x12 each'},{e:'Dead bug',r:'3x8 each'}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Saturday',date:'2026-07-26',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'cardio',n:'Bike intervals — return',t:'~40 min',ex:[{e:'Warm up 8 min easy',r:''},{e:'4x3 min Zone 4 / 3 min easy',r:''},{e:'Cool down 8 min',r:''}],cue:'Scaled back from pre-Regionals. 4 intervals not 6.'},
+        {c:'workout',n:'Core + mobility',t:'~30 min',ex:[{e:'Dead bug x8 each',r:'2 sets'},{e:'90/90 hip rotation',r:'5 min'},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Sunday',date:'2026-07-27',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'rest',n:'Rest + review',t:'Flexible',ex:[{e:'Review Regionals footage if available',r:''},{e:'Note 3 defensive patterns to improve before WUCC',r:''}],cue:null}
+      ]}
+    ]
+  },
+  {
+    num:5,label:'Week 5',phase:'WUCC Build — Primary Window',
+    note:'Primary improvement window. Push cardio and upper body. Core/mobility 4x this week. Scrim vs WUCC team Aug 6 — treat as match day.',
+    startDate:'2026-07-28',
+    days:[
+      {d:'Monday',date:'2026-07-28',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Target drill: 15m and 25m',r:''}],cue:'Longer targets this week — pushing range.'},
+        {c:'training',n:'Deep Space training',t:'20:00–22:00',ex:[{e:'Full engagement where foot allows',r:''},{e:'Push cutting intensity if foot is responding',r:''}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Tuesday',date:'2026-07-29',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'cardio',n:'Bike — Zone 3 build',t:'~50 min',ex:[{e:'Warm up 5 min',r:''},{e:'Zone 3 — 140–155 bpm',r:'40 min'},{e:'Cool down 5 min',r:''}],cue:'Longest Zone 3 session so far. Aerobic base building.'},
+        {c:'workout',n:'Core + mobility',t:'~40 min',ex:[{e:'Dead bug x10 each',r:'3 sets'},{e:'Pallof press x12 each',r:'3 sets'},{e:'Copenhagen plank x25s each',r:'3 sets'},{e:'Side plank x30s each',r:'2 sets'},{e:'Greatest stretch x6 each',r:''},{e:'Couch stretch x90s each',r:''},{e:'Thoracic extension over bed',r:'3 min'}],cue:'Volume and hold times stepping up this week.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Wednesday',date:'2026-07-30',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Upper body gym — Push/Pull A',t:'~65 min',ex:[{e:'Shoulder CARs x10',r:''},{e:'DB shoulder press',r:'4x8 RPE 8'},{e:'Landmine press',r:'3x8'},{e:'Lat pulldown',r:'4x8'},{e:'Seated cable row',r:'3x12'},{e:'Face pulls',r:'3x15'},{e:'Dead bug',r:'3x10 each'}],cue:'Best strength session of the week — keep RPE under 8, Bacon\'s training tonight.'},
+        {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Breaking the mark x20 each',r:''}],cue:'Pre-training sharpening.'},
+        {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Full training where cleared',r:''},{e:'Push intensity on throwing and tactical work',r:''}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Thursday',date:'2026-07-31',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Upper body gym — Pull/Core B',t:'~55 min',ex:[{e:'Single-arm DB row',r:'4x10 each'},{e:'Lat pulldown',r:'3x8'},{e:'Face pulls',r:'3x15'},{e:'Side-lying ER',r:'3x12 each'},{e:'Dead bug',r:'3x8 each'},{e:'Copenhagen plank',r:'3x25s each'}],cue:null},
+        {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Pallof press x12 each',r:'3 sets'},{e:'Side plank x30s each',r:'3 sets'},{e:'Greatest stretch x6 each',r:''},{e:'Hip flexor stretch x90s each',r:''},{e:'Thread the needle x6 each',r:''}],cue:'Post-gym add-on. Core only — no extra gym loading.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Friday',date:'2026-08-01',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'cardio',n:'Bike intervals',t:'~45 min',ex:[{e:'Warm up 8 min',r:''},{e:'6x3 min Zone 4 / 2 min easy',r:''},{e:'Cool down 8 min',r:''}],cue:'Peak interval session of this block. RPE 8–9 on work intervals.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Saturday',date:'2026-08-02',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Core + mobility',t:'~40 min',ex:[{e:'Dead bug x10 each',r:'3 sets'},{e:'Pallof press x12 each',r:'3 sets'},{e:'Copenhagen plank x25s each',r:'3 sets'},{e:'Greatest stretch x6 each',r:''},{e:'Couch stretch x90s each',r:''},{e:'Thoracic extension over bed',r:'3 min'},{e:'Thread the needle x6 each',r:''}],cue:'Day after hardest cardio. Core and mobility only — no heavy loading.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Sunday',date:'2026-08-03',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'rest',n:'Rest + prep for scrim week',t:'Flexible',ex:[{e:'Review WUCC opposition footage if available',r:''},{e:'Mental prep: defensive reads vs high-level teams',r:''}],cue:'Scrim vs WUCC team on Thursday. Last real push before taper.'}
+      ]}
+    ]
+  },
+  {
+    num:6,label:'Week 6',phase:'WUCC Taper — Week 1',
+    note:'Begin taper. Gym volume to 60%. Core/mobility stays. Aug 6 scrim + Bacon\'s. Aug 8 WUCC scrims at Grasshoppers. Aug 11 Pod.',
+    startDate:'2026-08-04',
+    days:[
+      {d:'Monday',date:'2026-08-04',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Target drill',r:''}],cue:'Taper week. Maintain sharpness.'},
+        {c:'training',n:'Deep Space training',t:'20:00–22:00',ex:[{e:'Full engagement',r:''},{e:'Quality over quantity — taper week',r:''}],cue:null},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Tuesday',date:'2026-08-05',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'cardio',n:'Bike — easy taper',t:'~30 min',ex:[{e:'Zone 2 easy — 125–140 bpm',r:'25 min'}],cue:'Taper begins. Reduced volume. No intensity.'},
+        {c:'workout',n:'Upper body — taper session',t:'~40 min',ex:[{e:'Landmine press',r:'3x6 RPE 6'},{e:'Lat pulldown',r:'3x6'},{e:'Face pulls',r:'2x15'},{e:'Dead bug',r:'2x8 each'}],cue:'60% of normal volume. Maintain, do not progress.'},
+        {c:'workout',n:'Core + mobility',t:'~30 min',ex:[{e:'Dead bug x8 each',r:'2 sets'},{e:'Pallof press x10 each',r:'2 sets'},{e:'Greatest stretch x5 each',r:''},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension',r:'3 min'}],cue:'Reduced volume matching the taper.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Wednesday',date:'2026-08-06',type:'match',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'match',n:'Scrim vs WUCC team',t:'All day',ex:[{e:'Pre-scrim warm-up — full protocol',r:''},{e:'Competitive intensity — treat as match day',r:''},{e:'Post-scrim: note what worked defensively',r:''}],cue:'HIGH INTENSITY DAY. Bacon\'s training also tonight — assess after scrim whether to attend at full or modified intensity.'},
+        {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Attend if body feels ok after scrim',r:''},{e:'Modified intensity if tired',r:''}],cue:'Two high-intensity events. Permission to reduce.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Thursday',date:'2026-08-07',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'rest',n:'Recovery day',t:'Flexible',ex:[{e:'Easy walk only',r:''},{e:'Couch stretch + 90/90 + thoracic extension',r:'15 min'},{e:'Full foot and ankle check',r:''}],cue:'Day after scrim. Mandatory recovery. Do not train.'}
+      ]},
+      {d:'Friday',date:'2026-08-08',type:'match',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'match',n:'WUCC Scrims — Grasshoppers RFC',t:'All day',ex:[{e:'Full match warm-up',r:''},{e:'Competitive scrims vs WUCC-level opposition',r:''},{e:'Post-day: full foot check and pain log',r:''}],cue:'Second match-intensity day this week. Protect the foot.'}
+      ]},
+      {d:'Saturday',date:'2026-08-09',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'rest',n:'Full rest',t:'Flexible',ex:[{e:'No training',r:''},{e:'Foot elevation and soft tissue work',r:''},{e:'Sleep and nutrition priority',r:''}],cue:'Day after scrims. Full rest. WUCC is 6 days away.'}
+      ]},
+      {d:'Sunday',date:'2026-08-10',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'rest',n:'Visualisation + prep',t:'~20 min',ex:[{e:'15 min visualisation: WUCC defensive sequences',r:''},{e:'Pack kit list check',r:''},{e:'Review game plan',r:''}],cue:'5 days to WUCC. Mental prep is as important as physical now.'}
+      ]}
+    ]
+  },
+  {
+    num:7,label:'Week 7',phase:'WUCC Final Taper',
+    note:'Aug 11 Pod. Aug 13 final Bacon\'s. Aug 15 WUCC begins. Mobility only — no loaded sessions. Arrive healthy.',
+    startDate:'2026-08-11',
+    days:[
+      {d:'Monday',date:'2026-08-11',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'training',n:'Iceni — Pod session',t:'18:30–19:30',ex:[{e:'Throwing sharpening only',r:''},{e:'Set play walkthrough — no cutting',r:''}],cue:'4 days to WUCC. Light only.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Tuesday',date:'2026-08-12',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'workout',n:'Mobility only',t:'~20 min',ex:[{e:'Greatest stretch x5 each',r:''},{e:'Couch stretch x60s each',r:''},{e:'90/90 hip rotation',r:'5 min'},{e:'Thoracic extension over bed',r:'3 min'}],cue:'3 days to WUCC. Nothing that creates fatigue today.'}
+      ]},
+      {d:'Wednesday',date:'2026-08-13',type:'training',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'throw',n:'Throwing drills',t:'~20 min',ex:[{e:'Stationary backhand x30',r:''},{e:'Stationary forehand x30',r:''},{e:'Release point check',r:''}],cue:'Final sharpening before WUCC. Short and confident.'},
+        {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Final session before WUCC',r:''},{e:'Set play run-throughs — controlled intensity',r:''},{e:'Team debrief and WUCC intentions',r:''}],cue:'48h before WUCC. Low intensity only. Confidence and connection, not fitness.'},
+        {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
+      ]},
+      {d:'Thursday',date:'2026-08-14',type:'rest',blocks:[
+        {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
+        {c:'rest',n:'Travel to Limerick',t:'All day',ex:[{e:'Zero training — travel day',r:''},{e:'Hydrate consistently throughout journey',r:''},{e:'Foot elevation during travel where possible',r:''},{e:'Arrive, check in, team dinner',r:''}],cue:'WUCC tomorrow. The preparation is done. Trust it.'}
+      ]},
+      {d:'Friday',date:'2026-08-15',type:'match',blocks:[
+        {c:'match',n:'WUCC — Day 1',t:'Limerick, Ireland',ex:[{e:'Team warm-up',r:''},{e:'Pool play',r:''},{e:'Post-day: foot check, eat, sleep',r:''}],cue:'You are here. Everything was for this.'}
+      ]},
+      {d:'Saturday',date:'2026-08-16',type:'match',blocks:[
+        {c:'match',n:'WUCC — Day 2',t:'Limerick, Ireland',ex:[{e:'Morning shake-out + warm-up',r:''},{e:'Pool play / crossovers',r:''}],cue:null}
+      ]},
+      {d:'Sunday',date:'2026-08-17',type:'match',blocks:[
+        {c:'match',n:'WUCC — Day 3',t:'Limerick, Ireland',ex:[{e:'Bracket play begins',r:''}],cue:null}
+      ]}
+    ]
+  }
+];
+
+const GATES=[
+  {w:'Wks 1–2',title:'Pain-free passive ROM',criteria:'Full ankle dorsiflexion and plantarflexion without pain on slow movement. Zero sharp pain at rest.',status:'active'},
+  {w:'Wk 3 gate',title:'30 min walking on varied terrain',criteria:'Walk continuously for 30 min outdoors with zero compensatory limping and no pain during or 24h after.',status:'locked'},
+  {w:'Wk 4 gate',title:'Walk-jog intervals on grass',criteria:'10 min walk-jog — 1 min jog / 2 min walk. Pain score 0/10 throughout and 24h after.',status:'locked'},
+  {w:'Wk 5 gate',title:'Straight-line jogging',criteria:'20 min continuous jog on grass at easy pace. Zero pain, zero limp. Physio sign-off required.',status:'locked'},
+  {w:'Wk 5–6 gate',title:'Change of direction 50% → 75%',criteria:'T-drill and 5-10-5 at half speed pain-free before progressing. Each speed requires separate clearance.',status:'locked'},
+  {w:'Wk 6–7 gate',title:'Full-speed cuts + jump-land',criteria:'All prior gates passed. Max-effort cut and two-foot landing pain-free ×5 before returning to full training.',status:'locked'},
+  {w:'Wk 7',title:'One full team session',criteria:'Participate in one full controlled training session with Iceni or Deep Space before WUCC.',status:'locked'}
+];
+
+const PILLAR_COLORS={morning:['#60a5fa','#0a1628'],workout:['#4ade80','#0d2318'],cardio:['#fbbf24','#1f1700'],throw:['#f472b6','#1f0a14'],evening:['#a78bfa','#150d28'],training:['#4ade80','#0d2318'],match:['#f87171','#1f0a0a'],rest:['#5a5958','#1a1a1a']};
+
+// ── STATE ──
+let activeWeek=0, completedBlocks={}, blockMeta={}, expandedDays={}, expandedBlocks={}, painLog={}, customSessions=[], gateStatuses={}, creatineLog={};
+
+function getCurrentWeekIndex(){
+  const today=new Date(); today.setHours(0,0,0,0);
+  for(let i=WEEKS.length-1;i>=0;i--){
+    const ws=localDate(WEEKS[i].startDate);
+    if(today>=ws) return i;
+  }
+  return 0;
+}
+
+function loadState(){
+  try{
+    const s=localStorage.getItem('wucc_v2');
+    if(s){
+      const p=JSON.parse(s);
+      completedBlocks=p.completedBlocks||{};
+      blockMeta=p.blockMeta||{};
+      painLog=p.painLog||{};
+      customSessions=p.customSessions||[];
+      gateStatuses=p.gateStatuses||{};
+      creatineLog=p.creatineLog||{};
+    }
+    activeWeek=getCurrentWeekIndex();
+  }catch(e){}
+}
+function saveState(){
+  try{localStorage.setItem('wucc_v2',JSON.stringify({completedBlocks,blockMeta,painLog,customSessions,gateStatuses,creatineLog}));}catch(e){}
+}
+function blockKey(w,d,b){return `${w}_${d}_${b}`}
+
+// ── VIEWS ──
+function switchView(v){
+  ['Home','Progress','Gates','Log'].forEach(x=>{
+    document.getElementById('view'+x).style.display=v===x?'block':'none';
+    document.getElementById('nav'+x).classList.toggle('active',v===x);
+  });
+  if(v==='Progress') renderProgress();
+  if(v==='Gates') renderGates();
+  if(v==='Log') renderLog();
+}
+
+// ── HOME ──
+function renderHeader(){
+  const w=WEEKS[activeWeek];
+  document.getElementById('headerSub').textContent=w.label;
+  const days=daysUntilWUCC();
+  document.getElementById('wuccCountdown').textContent=days>0?`${days}d to WUCC`:'WUCC is now!';
+  document.getElementById('phaseName').textContent=w.phase;
+  document.getElementById('phaseNote').textContent=w.note;
+  const ws=localDate(w.startDate);
+  const we=addDays(ws,6);
+  document.getElementById('weekLabel').textContent=`${w.label} · ${fmtDate(ws)} – ${fmtDate(we)}`;
+}
+
+function renderWeekStrip(){
+  const el=document.getElementById('weekStrip');el.innerHTML='';
+  WEEKS.forEach((w,i)=>{
+    const b=document.createElement('div');
+    b.className='wk'+(i===activeWeek?' active':'');
+    const ws=localDate(w.startDate);
+    const we=addDays(ws,6);
+    b.innerHTML=`<div class="wk-num">${w.label}</div><div class="wk-dates">${fmtDate(ws)}</div>`;
+    b.onclick=()=>{activeWeek=i;renderAll();};
+    el.appendChild(b);
+  });
+}
+
+function renderDays(){
+  const el=document.getElementById('dayList');el.innerHTML='';
+  const days=WEEKS[activeWeek].days;
+  const tKey=todayKey();
+  days.forEach((day,di)=>{
+    const dKey=dayDateKey(activeWeek,di);
+    const isToday=dKey===tKey;
+    const total=day.blocks.length;
+    const done=day.blocks.filter((_,bi)=>completedBlocks[blockKey(activeWeek,di,bi)]).length;
+    const isExp=expandedDays[`${activeWeek}_${di}`]||(isToday&&expandedDays[`${activeWeek}_${di}`]!==false);
+    const card=document.createElement('div');
+    card.className='day-card'+(isExp?' expanded':'')+(isToday?' today-card':'');
+    const tagMap={training:'tag-training',match:'tag-match',rest:'tag-rest',taper:'tag-taper'};
+    const tagLabel={training:'Training',match:'Match',rest:'Recovery',taper:'Taper'};
+    const tag=`<span class="day-type-tag ${tagMap[day.type]||'tag-rest'}">${tagLabel[day.type]||'Recovery'}</span>`;
+    const todayPip=isToday?'<div class="today-pip"></div>':'';
+    const dateStr=dayDate(activeWeek,di).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+    card.innerHTML=`<div class="day-head">${todayPip}<div style="flex:1"><div class="day-name">${day.d}</div><div class="day-date">${dateStr}</div></div>${tag}<div class="day-done-count">${done}/${total}</div><svg class="day-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div><div class="block-list" style="display:${isExp?'flex':'none'}"></div>`;
+    card.querySelector('.day-head').onclick=()=>{
+      expandedDays[`${activeWeek}_${di}`]=!isExp;
+      renderDays();
+    };
+    if(isExp){
+      const bList=card.querySelector('.block-list');
+      day.blocks.forEach((block,bi)=>{
+        const key=blockKey(activeWeek,di,bi);
+        const isDone=!!completedBlocks[key];
+        const isBlockExp=expandedBlocks[key];
+        const col=PILLAR_COLORS[block.c]||PILLAR_COLORS.rest;
+        const bEl=document.createElement('div');
+        bEl.className=`block-item b-${block.c}${isDone?' done':''}`;
+        let exHTML=block.ex.map((x,xi)=>`<div class="ex-item"><div class="ex-num" style="background:${col[1]};color:${col[0]}">${xi+1}</div><span style="flex:1">${x.e}</span>${x.r?`<span class="ex-rx">${x.r}</span>`:''}</div>`).join('');
+        const cueHTML=block.cue?`<div class="cue">⚠ ${block.cue}</div>`:'';
+        bEl.innerHTML=`<div class="block-header"><div class="block-dot"></div><div class="block-name">${block.n}</div><div class="block-time">${block.t}</div><div class="block-check${isDone?' done':''}" data-key="${key}">✓</div></div><div class="block-detail${isBlockExp?' open':''}"><div class="ex-list">${exHTML}</div>${cueHTML}</div>`;
+        bEl.querySelector('.block-header').onclick=(e)=>{
+          if(e.target.closest('.block-check'))return;
+          expandedBlocks[key]=!expandedBlocks[key];
+          renderDays();
+        };
+        bEl.querySelector('.block-check').onclick=(e)=>{
+          e.stopPropagation();
+          if(completedBlocks[key]){
+            delete completedBlocks[key];
+            delete blockMeta[key];
+            saveState();
+            renderDays();
+          } else {
+            openBlockDoneModal(key, block, dKey);
+          }
+        };
+        bList.appendChild(bEl);
+      });
+    }
+    el.appendChild(card);
+    if(isToday){setTimeout(()=>{card.scrollIntoView({behavior:'smooth',block:'start'});},100);}
+  });
+}
+
+// ── PROGRESS ──
+function renderProgress(){
+  const days=WEEKS[activeWeek].days;
+  let total=0,done=0;
+  days.forEach((day,di)=>day.blocks.forEach((_,bi)=>{total++;if(completedBlocks[blockKey(activeWeek,di,bi)])done++;}));
+  const pct=total>0?Math.round(done/total*100):0;
+  let streak=0;
+  const todayStr=todayKey();
+  const allDays=WEEKS.flatMap((w,wi)=>w.days.map((day,di)=>({wi,di,date:dayDateKey(wi,di),blocks:day.blocks})));
+  // Only count days up to and including today
+  const pastDays=allDays.filter(d=>d.date<=todayStr);
+  for(let i=pastDays.length-1;i>=0;i--){
+    const {wi,di,blocks}=pastDays[i];
+    const hasEvening=blocks.some((b,bi)=>b.c==='evening'&&completedBlocks[blockKey(wi,di,bi)]);
+    if(hasEvening)streak++;else break;
+  }
+  document.getElementById('statGrid').innerHTML=`
+    <div class="stat-card"><div class="stat-label">Blocks logged</div><div class="stat-val" style="color:var(--purple)">${done}</div><div class="stat-sub">${WEEKS[activeWeek].label}</div></div>
+    <div class="stat-card"><div class="stat-label">Week progress</div><div class="stat-val" style="color:var(--green)">${pct}%</div><div class="stat-sub">completed</div></div>
+    <div class="stat-card"><div class="stat-label">Rehab streak</div><div class="stat-val" style="color:var(--amber)">${streak}</div><div class="stat-sub">consecutive days</div></div>
+    <div class="stat-card"><div class="stat-label">Days to WUCC</div><div class="stat-val" style="color:var(--blue)">${daysUntilWUCC()}</div><div class="stat-sub">Aug 15</div></div>`;
+  renderCreatine();
+  renderPainLog();
+  const pillars=[
+    {n:'Morning routine',c:['morning'],color:'#60a5fa'},
+    {n:'Gym + core',c:['workout'],color:'#4ade80'},
+    {n:'Cardio',c:['cardio'],color:'#fbbf24'},
+    {n:'Throwing',c:['throw'],color:'#f472b6'},
+    {n:'Evening rehab',c:['evening'],color:'#a78bfa'},
+    {n:'Team training',c:['training','match'],color:'#4ade80'}
+  ];
+  let html='';
+  pillars.forEach(p=>{
+    let pt=0,pd=0;
+    days.forEach((day,di)=>day.blocks.forEach((b,bi)=>{if(p.c.includes(b.c)){pt++;if(completedBlocks[blockKey(activeWeek,di,bi)])pd++;}}));
+    const pp=pt>0?Math.round(pd/pt*100):0;
+    html+=`<div class="pillar-row"><div class="pillar-name">${p.n}</div><div class="pillar-bar-wrap"><div class="pillar-bar" style="width:${pp}%;background:${p.color}"></div></div><div class="pillar-pct">${pp}%</div></div>`;
+  });
+  document.getElementById('pillarBars').innerHTML=html;
+}
+
+function painColor(v){
+  if(v<=2)return '#4ade80';
+  if(v<=5)return '#fbbf24';
+  return '#f87171';
+}
+
+function creatineStreak(){
+  let streak=0;
+  const today=new Date(); today.setHours(0,0,0,0);
+  for(let i=0;i<365;i++){
+    const d=new Date(today); d.setDate(d.getDate()-i);
+    if(creatineLog[dateKey(d)]) streak++; else break;
+  }
+  return streak;
+}
+
+function renderCreatine(){
+  const today=todayKey();
+  const taken=!!creatineLog[today];
+  const streak=creatineStreak();
+  // Last 28 days dots
+  const dots=[];
+  for(let i=27;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i); d.setHours(0,0,0,0);
+    dots.push(!!creatineLog[dateKey(d)]);
+  }
+  const dotsHtml=dots.map(t=>`<div class="creatine-dot" style="background:${t?'var(--green)':'var(--surface3)'}"></div>`).join('');
+  document.getElementById('creatineSection').innerHTML=`
+    <div class="creatine-card${taken?' taken':''}">
+      <div class="creatine-top">
+        <div class="creatine-label">${taken?'✓ Taken today':'5g creatine monohydrate'}</div>
+        <div class="creatine-streak">${streak>0?`🔥 ${streak} day${streak===1?'':'s'}`:'Start your streak'}</div>
+      </div>
+      <button class="creatine-btn ${taken?'taken':'untaken'}" onclick="toggleCreatine()">
+        ${taken?'Logged — tap to undo':'Mark as taken'}
+      </button>
+      <div class="creatine-dots">${dotsHtml}</div>
+    </div>`;
+}
+
+function toggleCreatine(){
+  const today=todayKey();
+  creatineLog[today]=!creatineLog[today];
+  if(!creatineLog[today]) delete creatineLog[today];
+  saveState();
+  renderCreatine();
+}
+
+function renderPainLog(){
+  const today=todayKey();
+  const todayData=painLog[today]||{};
+  const hasMorning=!!todayData.morning;
+  const hasEvening=!!todayData.evening;
+  const areas=['leftAnkle','rightAnkle','shoulder'];
+  const areaLabels=['Left ankle','Right ankle','Shoulder'];
+
+  let html=``;
+  // Morning entry
+  html+=`<div class="pain-entry">
+    <div class="pain-entry-head"><div class="pain-entry-title">🌅 Morning — upon waking</div><div class="pain-entry-time">Today</div></div>`;
+  if(hasMorning){
+    html+=`<div class="pain-sliders">`;
+    areas.forEach((a,i)=>{const v=todayData.morning[a]||0;html+=`<div class="pain-row"><span class="pain-label">${areaLabels[i]}</span><div style="flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden"><div style="width:${v*10}%;height:100%;background:${painColor(v)};border-radius:2px"></div></div><span class="pain-val" style="color:${painColor(v)}">${v}</span></div>`;});
+    html+=`</div><div class="pain-saved" style="display:block;color:var(--green);font-size:11px;margin-top:8px">✓ Logged</div>`;
+  } else {
+    html+=`<div class="pain-sliders">`;
+    areas.forEach((a,i)=>{html+=`<div class="pain-row"><span class="pain-label">${areaLabels[i]}</span><input type="range" class="pain-slider" id="pl_m_${a}" min="0" max="10" value="0" oninput="updSlider('pl_m_${a}','pv_m_${a}')"><span class="pain-val" id="pv_m_${a}">0</span></div>`;});
+    html+=`</div><button class="pain-save-btn" onclick="savePain('morning')">Save morning check-in</button>`;
+  }
+  html+=`</div>`;
+
+  // Evening entry
+  html+=`<div class="pain-entry">
+    <div class="pain-entry-head"><div class="pain-entry-title">🌙 Evening — end of day</div><div class="pain-entry-time">Today</div></div>`;
+  if(hasEvening){
+    html+=`<div class="pain-sliders">`;
+    areas.forEach((a,i)=>{const v=todayData.evening[a]||0;html+=`<div class="pain-row"><span class="pain-label">${areaLabels[i]}</span><div style="flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden"><div style="width:${v*10}%;height:100%;background:${painColor(v)};border-radius:2px"></div></div><span class="pain-val" style="color:${painColor(v)}">${v}</span></div>`;});
+    html+=`</div><div class="pain-saved" style="display:block;color:var(--green);font-size:11px;margin-top:8px">✓ Logged</div>`;
+  } else {
+    html+=`<div class="pain-sliders">`;
+    areas.forEach((a,i)=>{html+=`<div class="pain-row"><span class="pain-label">${areaLabels[i]}</span><input type="range" class="pain-slider" id="pl_e_${a}" min="0" max="10" value="0" oninput="updSlider('pl_e_${a}','pv_e_${a}')"><span class="pain-val" id="pv_e_${a}">0</span></div>`;});
+    html+=`</div><button class="pain-save-btn" onclick="savePain('evening')">Save evening check-in</button>`;
+  }
+  html+=`</div>`;
+
+  // History
+  const histKeys=Object.keys(painLog).sort().reverse().slice(0,7);
+  if(histKeys.length>0){
+    html+=`<div class="pain-history">`;
+    histKeys.forEach(k=>{
+      const entry=painLog[k];
+      const d=localDate(k);
+      const label=d.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+      html+=`<div class="pain-hist-row"><span class="pain-hist-date">${label}</span><div class="pain-hist-dots">`;
+      ['morning','evening'].forEach(t=>{
+        if(entry[t]){
+          areas.forEach(a=>{
+            const v=entry[t][a]||0;
+            html+=`<div class="pain-dot" style="background:${painColor(v)}" title="${areaLabels[areas.indexOf(a)]} ${t}: ${v}/10"></div>`;
+          });
+        }
+      });
+      html+=`</div></div>`;
+    });
+    html+=`</div>`;
+  }
+
+  document.getElementById('painLogSection').innerHTML=html;
+}
+
+// Shared slider display update — used by both pain log and session modal
+function updSlider(sliderId,valId){
+  const v=document.getElementById(sliderId).value;
+  const el=document.getElementById(valId);
+  el.textContent=v;
+  el.style.color=painColor(parseInt(v));
+}
+// Alias so existing inline oninput="updV(...)" calls in the modal still work
+function updV(sid,vid){updSlider(sid,vid);}
+
+function savePain(time){
+  const today=todayKey();
+  if(!painLog[today])painLog[today]={};
+  const areas=['leftAnkle','rightAnkle','shoulder'];
+  const prefix=time==='morning'?'m':'e';
+  const data={};
+  areas.forEach(a=>{
+    const el=document.getElementById(`pl_${prefix}_${a}`);
+    data[a]=el?parseInt(el.value):0;
+  });
+  painLog[today][time]=data;
+  saveState();
+  renderPainLog();
+}
+
+// ── GATES ──
+function renderGates(){
+  document.getElementById('gateList').innerHTML=GATES.map((g,i)=>{
+    const status=gateStatuses[i]||g.status;
+    const sc=status==='passed'?'var(--green)':status==='active'?'var(--amber)':'var(--text3)';
+    const sl=status==='passed'?'Passed ✓':status==='active'?'Active — working toward this':'Locked';
+    const btnHtml=status==='active'?`<button class="gate-toggle" style="background:var(--green-bg);color:var(--green);border:0.5px solid var(--green-border)" onclick="markGatePassed(${i})">Mark as passed</button>`:
+      status==='passed'?`<button class="gate-toggle" style="background:var(--surface2);color:var(--text2);border:0.5px solid var(--border)" onclick="resetGate(${i})">Reset</button>`:'';
+    return `<div class="gate-card ${status==='active'?'gate-active':status==='passed'?'gate-passed':''}"><div class="gate-week">${g.w}</div><div class="gate-title">${g.title}</div><div class="gate-criteria">${g.criteria}</div><div class="gate-status"><div class="gate-dot" style="background:${sc}"></div><span style="color:${sc}">${sl}</span></div>${btnHtml}</div>`;
+  }).join('');
+}
+
+function markGatePassed(i){
+  gateStatuses[i]='passed';
+  if(i+1<GATES.length&&(gateStatuses[i+1]||GATES[i+1].status)==='locked')gateStatuses[i+1]='active';
+  saveState();renderGates();
+}
+function resetGate(i){
+  gateStatuses[i]='active';
+  if(i+1<GATES.length)gateStatuses[i+1]='locked';
+  saveState();renderGates();
+}
+
+// ── BLOCK COMPLETION MODAL ──
+let _blockDoneBlock=null, _blockDoneDate=null;
+
+function openBlockDoneModal(key, block, date){
+  _blockDoneBlock=block;
+  _blockDoneDate=date;
+  document.getElementById('blockDoneKey').value=key;
+  document.getElementById('blockDoneTitle').textContent=block.n;
+  document.getElementById('bdRPE').value=5;
+  document.getElementById('vBdRPE').textContent=5;
+  document.getElementById('vBdRPE').style.color='var(--purple)';
+  document.getElementById('bdNotes').value='';
+  ['bdLA','bdRA','bdSH'].forEach(id=>{document.getElementById(id).value=0;});
+  ['vBdLA','vBdRA','vBdSH'].forEach(id=>{const el=document.getElementById(id);el.textContent=0;el.style.color=painColor(0);});
+  document.getElementById('blockDoneModal').classList.add('open');
+}
+
+function closeBlockDoneModal(){
+  document.getElementById('blockDoneModal').classList.remove('open');
+  _blockDoneBlock=null; _blockDoneDate=null;
+}
+
+function saveBlockDone(){
+  const key=document.getElementById('blockDoneKey').value;
+  const rpe=parseInt(document.getElementById('bdRPE').value);
+  const notes=document.getElementById('bdNotes').value.trim();
+  const pain={
+    leftAnkle:parseInt(document.getElementById('bdLA').value),
+    rightAnkle:parseInt(document.getElementById('bdRA').value),
+    shoulder:parseInt(document.getElementById('bdSH').value)
+  };
+  completedBlocks[key]=true;
+  blockMeta[key]={rpe,notes,pain};
+  saveState();
+  closeBlockDoneModal();
+  renderDays();
+  // Sync to Sheets
+  if(_blockDoneBlock && _blockDoneDate){
+    syncToSheets({
+      source:'block',
+      date:_blockDoneDate,
+      type:_blockDoneBlock.c,
+      blockName:_blockDoneBlock.n,
+      duration:_blockDoneBlock.t||'',
+      rpe,notes,
+      leftAnkle:pain.leftAnkle,
+      rightAnkle:pain.rightAnkle,
+      shoulder:pain.shoulder
+    });
+  }
+}
+
+// ── LOG ──
+function openAddSession(editId){
+  const today=new Date().toISOString().slice(0,10);
+  document.getElementById('sessionModalTitle').textContent=editId?'Edit session':'Log a session';
+  document.getElementById('sessionEditId').value=editId||'';
+  if(editId){
+    const s=customSessions.find(x=>x.id===editId);
+    if(!s)return;
+    document.getElementById('sessionDate').value=s.date;
+    document.getElementById('sessionType').value=s.type;
+    document.getElementById('sessionDuration').value=s.duration||'';
+    document.getElementById('sessionNotes').value=s.notes||'';
+    const rpe=s.rpe||0;
+    document.getElementById('mRPE').value=rpe;
+    document.getElementById('vRPE').textContent=rpe;
+    document.getElementById('vRPE').style.color='var(--purple)';
+    ['mLA','mRA','mSH'].forEach((id,i)=>{
+      const v=[s.pain.leftAnkle,s.pain.rightAnkle,s.pain.shoulder][i]||0;
+      document.getElementById(id).value=v;
+    });
+    ['vLA','vRA','vSH'].forEach((id,i)=>{
+      const v=[s.pain.leftAnkle,s.pain.rightAnkle,s.pain.shoulder][i]||0;
+      const el=document.getElementById(id);el.textContent=v;el.style.color=painColor(v);
+    });
+  } else {
+    document.getElementById('sessionDate').value=today;
+    document.getElementById('sessionType').value='Training';
+    document.getElementById('sessionDuration').value='';
+    document.getElementById('sessionNotes').value='';
+    document.getElementById('mRPE').value=0;
+    document.getElementById('vRPE').textContent=0;
+    document.getElementById('vRPE').style.color='var(--purple)';
+    ['mLA','mRA','mSH'].forEach(id=>{document.getElementById(id).value=0;});
+    ['vLA','vRA','vSH'].forEach(id=>{const el=document.getElementById(id);el.textContent=0;el.style.color=painColor(0);});
+  }
+  document.getElementById('addSessionModal').classList.add('open');
+}
+
+function closeAddSession(){document.getElementById('addSessionModal').classList.remove('open');}
+
+function saveSession(){
+  const editId=document.getElementById('sessionEditId').value;
+  const isNew=!editId;
+  const entry={
+    date:document.getElementById('sessionDate').value,
+    type:document.getElementById('sessionType').value,
+    duration:document.getElementById('sessionDuration').value,
+    rpe:parseInt(document.getElementById('mRPE').value),
+    notes:document.getElementById('sessionNotes').value,
+    pain:{
+      leftAnkle:parseInt(document.getElementById('mLA').value),
+      rightAnkle:parseInt(document.getElementById('mRA').value),
+      shoulder:parseInt(document.getElementById('mSH').value)
+    },
+    id:editId||Date.now()
+  };
+  if(isNew){
+    customSessions.push(entry);
+  } else {
+    const idx=customSessions.findIndex(x=>x.id==editId);
+    if(idx>-1) customSessions[idx]=entry;
+  }
+  saveState();
+  closeAddSession();
+  renderLog();
+  syncToSheets({
+    source:'custom',
+    date:entry.date,
+    type:entry.type,
+    blockName:'',
+    duration:entry.duration,
+    rpe:entry.rpe,
+    notes:entry.notes,
+    leftAnkle:entry.pain.leftAnkle,
+    rightAnkle:entry.pain.rightAnkle,
+    shoulder:entry.pain.shoulder
+  });
+}
+
+function deleteSession(id){
+  // confirm() is silently blocked in PWA standalone mode on iOS — use inline confirmation instead
+  const btn=document.querySelector(`[data-delete-id="${id}"]`);
+  if(!btn)return;
+  if(btn.dataset.confirming==='true'){
+    customSessions=customSessions.filter(s=>s.id!==id);
+    saveState();
+    renderLog();
+  } else {
+    btn.dataset.confirming='true';
+    btn.textContent='Tap again to confirm';
+    btn.style.minWidth=btn.offsetWidth+'px';
+    setTimeout(()=>{
+      if(btn && btn.dataset.confirming==='true'){
+        btn.dataset.confirming='false';
+        btn.textContent='Delete';
+        btn.style.minWidth='';
+      }
+    }, 3000);
+  }
+}
+
+const typeColors={Training:['#4ade80','#0d2318'],Gym:['#60a5fa','#0a1628'],Cardio:['#fbbf24','#1f1700'],Mobility:['#a78bfa','#150d28'],Throwing:['#f472b6','#1f0a14'],Match:['#f87171','#1f0a0a'],Other:['#9a9890','#232323']};
+
+function quickLogThrow(){
+  const today = new Date().toISOString().slice(0,10);
+  const entry = {
+    date: today,
+    type: 'Throwing',
+    duration: '30',
+    rpe: 0,
+    notes: '',
+    pain: {leftAnkle:0, rightAnkle:0, shoulder:0},
+    id: Date.now()
+  };
+  customSessions.push(entry);
+  saveState();
+  renderLog();
+  syncToSheets({source:'custom',date:entry.date,type:'Throwing',blockName:'',duration:'30',rpe:0,notes:'',leftAnkle:0,rightAnkle:0,shoulder:0});
+  const btn = document.querySelector('[onclick="quickLogThrow()"]');
+  if(btn){ btn.textContent = '✓ Logged'; setTimeout(()=>{ btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> Throw'; }, 1500); }
+}
+
+function renderLog(){
+  // Sync status badge visibility
+  const syncEl=document.getElementById('syncStatus');
+  if(syncEl) syncEl.className='sync-status '+(SHEETS_URL?'sync-ok':'sync-pending'), syncEl.textContent=SHEETS_URL?'✓ Configured':'Not configured';
+
+  // Build by-date map: block completions
+  const byDate={};
+  Object.entries(completedBlocks).filter(([,v])=>v).forEach(([key])=>{
+    const [w,d,b]=key.split('_');
+    const wi=parseInt(w), di=parseInt(d), bi=parseInt(b);
+    const week=WEEKS[wi]; if(!week)return;
+    const day=week.days[di]; if(!day)return;
+    const block=day.blocks[bi]; if(!block)return;
+    const meta=blockMeta[key]||{};
+    const dateStr=dayDateKey(wi,di);
+    if(!byDate[dateStr])byDate[dateStr]={blocks:[],custom:[]};
+    byDate[dateStr].blocks.push({block,meta,key});
+  });
+  // Custom sessions
+  customSessions.forEach(s=>{
+    if(!byDate[s.date])byDate[s.date]={blocks:[],custom:[]};
+    byDate[s.date].custom.push(s);
+  });
+
+  const allDates=Object.keys(byDate).sort().reverse();
+  if(!allDates.length){
+    document.getElementById('logList').innerHTML='<div class="empty-state">No sessions logged yet.<br>Tap the circle next to any block to mark it done,<br>or use the button above to log a session.</div>';
+    return;
+  }
+  document.getElementById('logList').innerHTML=allDates.map(date=>{
+    const {blocks,custom}=byDate[date];
+    const d=localDate(date);
+    const label=d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short',year:'numeric'});
+    let html=`<div class="log-entry"><div class="log-date">${label}</div>`;
+
+    // Block completions
+    if(blocks.length){
+      html+=`<div class="log-blocks">`;
+      blocks.forEach(({block,meta})=>{
+        const c=PILLAR_COLORS[block.c]||PILLAR_COLORS.rest;
+        html+=`<span class="log-tag" style="background:${c[1]};color:${c[0]}">${block.n}</span>`;
+        if(meta.rpe) html+=`<span class="rpe-badge">RPE ${meta.rpe}</span>`;
+      });
+      html+=`</div>`;
+      // Show notes from block completions
+      blocks.forEach(({block,meta})=>{
+        if(meta.notes) html+=`<div class="log-notes" style="margin-top:4px"><span style="color:var(--text3)">${block.n}:</span> ${meta.notes}</div>`;
+        if(meta.pain&&(meta.pain.leftAnkle||meta.pain.rightAnkle||meta.pain.shoulder)){
+          html+=`<div class="log-pain-row">
+            <span class="log-pain-chip" style="background:${painColor(meta.pain.leftAnkle)}22;color:${painColor(meta.pain.leftAnkle)}">L ankle ${meta.pain.leftAnkle}</span>
+            <span class="log-pain-chip" style="background:${painColor(meta.pain.rightAnkle)}22;color:${painColor(meta.pain.rightAnkle)}">R ankle ${meta.pain.rightAnkle}</span>
+            <span class="log-pain-chip" style="background:${painColor(meta.pain.shoulder)}22;color:${painColor(meta.pain.shoulder)}">Shoulder ${meta.pain.shoulder}</span>
+          </div>`;
+        }
+      });
+    }
+
+    // Custom sessions
+    custom.forEach(s=>{
+      const c=typeColors[s.type]||typeColors.Other;
+      html+=`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <span class="log-tag" style="background:${c[1]};color:${c[0]}">${s.type}</span>
+          <span class="log-custom-badge">custom</span>
+          ${s.duration?`<span style="font-size:10px;color:var(--text3)">${s.duration} min</span>`:''}
+          ${s.rpe?`<span class="rpe-badge">RPE ${s.rpe}</span>`:''}
+        </div>
+        ${s.notes?`<div class="log-notes">${s.notes}</div>`:''}
+        ${(s.pain.leftAnkle||s.pain.rightAnkle||s.pain.shoulder)?`<div class="log-pain-row">
+          <span class="log-pain-chip" style="background:${painColor(s.pain.leftAnkle)}22;color:${painColor(s.pain.leftAnkle)}">L ankle ${s.pain.leftAnkle}</span>
+          <span class="log-pain-chip" style="background:${painColor(s.pain.rightAnkle)}22;color:${painColor(s.pain.rightAnkle)}">R ankle ${s.pain.rightAnkle}</span>
+          <span class="log-pain-chip" style="background:${painColor(s.pain.shoulder)}22;color:${painColor(s.pain.shoulder)}">Shoulder ${s.pain.shoulder}</span>
+        </div>`:''}
+        <div class="log-entry-actions">
+          <button class="log-action-btn log-edit-btn" onclick="openAddSession(${s.id})">Edit</button>
+          <button class="log-action-btn log-delete-btn" data-delete-id="${s.id}" onclick="deleteSession(${s.id})">Delete</button>
+        </div>
+      </div>`;
+    });
+
+    html+=`</div>`;
+    return html;
+  }).join('');
+}
+
+function renderAll(){renderHeader();renderWeekStrip();renderDays();}
+loadState();renderAll();
+</script>
+</body>
+</html>
