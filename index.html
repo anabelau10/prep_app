@@ -350,20 +350,17 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
 // ── GOOGLE SHEETS CONFIG ──
 // Paste your Apps Script web app URL here after deploying
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzQq-lsbDOqiYdoaGVpeNdL3YSyfnDdesZGB9ZWS6iYIXBoEMsO3qsiyOGk9ssenqrJ/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzcdIxEh5CskQ-p4-0gfNEznUo3qPAWmyjeXhyI0DuUpvrhL9DfkFT5eR-VCoHlyVTj/exec';
 
-async function syncToSheets(row){
+function syncToSheets(row){
   if(!SHEETS_URL) return;
-  try{
-    setSyncStatus('pending');
-    // Apps Script requires form-encoded data for reliable cross-origin POST.
-    // JSON POST with no-cors appears to succeed but is silently rejected by Google.
-    const body=new URLSearchParams({data:JSON.stringify(row)});
-    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',body});
-    setSyncStatus('ok');
-  }catch(e){
-    setSyncStatus('fail');
-  }
+  setSyncStatus('pending');
+  // Image ping is the most reliable cross-origin method for Apps Script.
+  // fetch() with no-cors and XMLHttpRequest both get blocked or silently dropped.
+  const params=new URLSearchParams(Object.entries(row).map(([k,v])=>[k,String(v??'')]));
+  const img=new Image();
+  img.onload=img.onerror=()=>setSyncStatus('ok');
+  img.src=`${SHEETS_URL}?${params.toString()}`;
 }
 
 function setSyncStatus(state){
@@ -1101,11 +1098,12 @@ function saveBlockDone(){
 
 // ── LOG ──
 function openAddSession(editId){
+  editId=editId?Number(editId):null;
   const today=new Date().toISOString().slice(0,10);
   document.getElementById('sessionModalTitle').textContent=editId?'Edit session':'Log a session';
   document.getElementById('sessionEditId').value=editId||'';
   if(editId){
-    const s=customSessions.find(x=>x.id===editId);
+    const s=customSessions.find(x=>Number(x.id)===editId);
     if(!s)return;
     document.getElementById('sessionDate').value=s.date;
     document.getElementById('sessionType').value=s.type;
@@ -1140,7 +1138,8 @@ function openAddSession(editId){
 function closeAddSession(){document.getElementById('addSessionModal').classList.remove('open');}
 
 function saveSession(){
-  const editId=document.getElementById('sessionEditId').value;
+  const rawEditId=document.getElementById('sessionEditId').value;
+  const editId=rawEditId?Number(rawEditId):null;
   const isNew=!editId;
   const entry={
     date:document.getElementById('sessionDate').value,
@@ -1153,12 +1152,12 @@ function saveSession(){
       rightAnkle:parseInt(document.getElementById('mRA').value),
       shoulder:parseInt(document.getElementById('mSH').value)
     },
-    id:editId||Date.now()
+    id:editId||Date.now()  // always a number
   };
   if(isNew){
     customSessions.push(entry);
   } else {
-    const idx=customSessions.findIndex(x=>x.id==editId);
+    const idx=customSessions.findIndex(x=>Number(x.id)===editId);
     if(idx>-1) customSessions[idx]=entry;
   }
   saveState();
@@ -1179,11 +1178,11 @@ function saveSession(){
 }
 
 function deleteSession(id){
-  // confirm() is silently blocked in PWA standalone mode on iOS — use inline confirmation instead
+  id=Number(id);
   const btn=document.querySelector(`[data-delete-id="${id}"]`);
   if(!btn)return;
   if(btn.dataset.confirming==='true'){
-    customSessions=customSessions.filter(s=>s.id!==id);
+    customSessions=customSessions.filter(s=>Number(s.id)!==id);
     saveState();
     renderLog();
   } else {
