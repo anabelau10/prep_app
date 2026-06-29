@@ -1,4 +1,4 @@
-const CACHE = 'wucc-v4';
+const CACHE = 'wucc-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -23,6 +23,29 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  const url = new URL(e.request.url);
+
+  // Never cache sync traffic — Apps Script reads/writes must always hit the
+  // live sheet, never a stale cached copy.
+  if (url.hostname.endsWith('script.google.com') ||
+      url.hostname.endsWith('googleusercontent.com')) {
+    return; // let the browser handle it normally
+  }
+
+  // Network-first for the app shell so code/icon updates appear on next launch
+  // when online; fall back to cache when offline.
+  if (e.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/')) {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      }).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+
+  // Cache-first for other static assets (icons, manifest).
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
