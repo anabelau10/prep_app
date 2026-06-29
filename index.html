@@ -149,6 +149,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .pain-val{font-size:11px;font-weight:600;width:20px;text-align:right;color:var(--purple)}
 .pain-save-btn{margin-top:12px;width:100%;padding:9px;border-radius:var(--radius-sm);background:var(--purple-bg);border:0.5px solid var(--purple-border);color:var(--purple);font-size:12px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .pain-saved{font-size:11px;color:var(--green);text-align:center;margin-top:8px;display:none}
+.pain-clear-btn{background:var(--red-bg);color:var(--red);border:0.5px solid var(--red-border);border-radius:var(--radius-sm);font-size:10px;font-weight:600;padding:3px 9px;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .pain-history{margin-top:4px}
 .pain-hist-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border);font-size:11px}
 .pain-hist-row:last-child{border-bottom:none}
@@ -1047,6 +1048,14 @@ function renderDays(){
             delete blockMeta[key];
             saveState();
             renderDays();
+            // Propagate the un-completion so the pull doesn't resurrect it.
+            syncToSheets({
+              id:'block_'+key,
+              source:'block',
+              date:'',type:'',blockName:'',duration:'',rpe:'',notes:'',
+              leftAnkle:'',rightAnkle:'',shoulder:'',
+              deleted:true
+            });
           } else {
             openBlockDoneModal(key, block, dKey);
           }
@@ -1178,7 +1187,7 @@ function renderPainLog(){
   if(hasMorning){
     html+=`<div class="pain-sliders">`;
     areas.forEach((a,i)=>{const v=todayData.morning[a]||0;html+=`<div class="pain-row"><span class="pain-label">${areaLabels[i]}</span><div style="flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden"><div style="width:${v*10}%;height:100%;background:${painColor(v)};border-radius:2px"></div></div><span class="pain-val" style="color:${painColor(v)}">${v}</span></div>`;});
-    html+=`</div><div class="pain-saved" style="display:block;color:var(--green);font-size:11px;margin-top:8px">✓ Logged</div>`;
+    html+=`</div><div class="pain-saved" style="display:flex;align-items:center;justify-content:space-between;color:var(--green);font-size:11px;margin-top:8px"><span>✓ Logged</span><button class="pain-clear-btn" data-clear-pain="morning" onclick="clearPain('morning')">Clear</button></div>`;
   } else {
     html+=`<div class="pain-sliders">`;
     areas.forEach((a,i)=>{html+=`<div class="pain-row"><span class="pain-label">${areaLabels[i]}</span><input type="range" class="pain-slider" id="pl_m_${a}" min="0" max="10" value="0" oninput="updSlider('pl_m_${a}','pv_m_${a}')"><span class="pain-val" id="pv_m_${a}">0</span></div>`;});
@@ -1192,7 +1201,7 @@ function renderPainLog(){
   if(hasEvening){
     html+=`<div class="pain-sliders">`;
     areas.forEach((a,i)=>{const v=todayData.evening[a]||0;html+=`<div class="pain-row"><span class="pain-label">${areaLabels[i]}</span><div style="flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden"><div style="width:${v*10}%;height:100%;background:${painColor(v)};border-radius:2px"></div></div><span class="pain-val" style="color:${painColor(v)}">${v}</span></div>`;});
-    html+=`</div><div class="pain-saved" style="display:block;color:var(--green);font-size:11px;margin-top:8px">✓ Logged</div>`;
+    html+=`</div><div class="pain-saved" style="display:flex;align-items:center;justify-content:space-between;color:var(--green);font-size:11px;margin-top:8px"><span>✓ Logged</span><button class="pain-clear-btn" data-clear-pain="evening" onclick="clearPain('evening')">Clear</button></div>`;
   } else {
     html+=`<div class="pain-sliders">`;
     areas.forEach((a,i)=>{html+=`<div class="pain-row"><span class="pain-label">${areaLabels[i]}</span><input type="range" class="pain-slider" id="pl_e_${a}" min="0" max="10" value="0" oninput="updSlider('pl_e_${a}','pv_e_${a}')"><span class="pain-val" id="pv_e_${a}">0</span></div>`;});
@@ -1258,6 +1267,36 @@ function savePain(time){
     leftAnkle:data.leftAnkle,rightAnkle:data.rightAnkle,shoulder:data.shoulder,
     extra:{leftAnkle:data.leftAnkle,rightAnkle:data.rightAnkle,shoulder:data.shoulder,time:time}
   });
+}
+
+// Clear a logged pain check-in (so a mis-entry can be redone). Two-tap confirm,
+// then removes locally and soft-deletes on the sheet so it doesn't return on pull.
+function clearPain(time){
+  const today=todayKey();
+  const btn=document.querySelector(`[data-clear-pain="${time}"]`);
+  if(!btn)return;
+  if(btn.dataset.confirming==='true'){
+    if(painLog[today]) delete painLog[today][time];
+    if(painLog[today] && Object.keys(painLog[today]).length===0) delete painLog[today];
+    saveState();
+    renderPainLog();
+    syncToSheets({
+      id:'pain_'+today+'_'+time,
+      source:'pain',
+      date:'',type:'',blockName:'',duration:'',rpe:'',notes:'',
+      leftAnkle:'',rightAnkle:'',shoulder:'',
+      deleted:true
+    });
+  } else {
+    btn.dataset.confirming='true';
+    btn.textContent='Tap to confirm';
+    setTimeout(()=>{
+      if(btn && btn.dataset.confirming==='true'){
+        btn.dataset.confirming='false';
+        btn.textContent='Clear';
+      }
+    },3000);
+  }
 }
 
 // ── GATES ──
@@ -1331,20 +1370,23 @@ function saveBlockDone(){
     rightAnkle:parseInt(document.getElementById('bdRA').value),
     shoulder:parseInt(document.getElementById('bdSH').value)
   };
+  // Capture these BEFORE closeBlockDoneModal() nulls _blockDoneBlock/_blockDoneDate,
+  // otherwise the sync block below sees nulls and silently skips.
+  const block=_blockDoneBlock, date=_blockDoneDate;
   completedBlocks[key]=true;
   blockMeta[key]={rpe,notes,pain};
   saveState();
   closeBlockDoneModal();
   renderDays();
   // Sync to Sheets
-  if(_blockDoneBlock && _blockDoneDate){
+  if(block && date){
     syncToSheets({
       id:'block_'+key,
       source:'block',
-      date:_blockDoneDate,
-      type:_blockDoneBlock.c,
-      blockName:_blockDoneBlock.n,
-      duration:_blockDoneBlock.t||'',
+      date:date,
+      type:block.c,
+      blockName:block.n,
+      duration:block.t||'',
       rpe,notes,
       leftAnkle:pain.leftAnkle,
       rightAnkle:pain.rightAnkle,
