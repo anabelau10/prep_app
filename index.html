@@ -638,14 +638,16 @@ function daysUntilWUCC(){
   return Math.max(0,diff);
 }
 
-// Derive each day's correct date from the week's startDate + day index.
-// The hardcoded day.date fields in WEEKS data are all off by one day (a data entry error),
-// so we ignore them and compute the correct date here instead.
+// Each day carries its own correct calendar date in day.date (verified against
+// the Iceni 2026 calendar — Bacon's trainings on Thursdays, Pods on Tuesdays,
+// etc). Earlier code wrongly assumed these were off-by-one and recomputed from
+// startDate+index, which is what put Iceni on Wednesday instead of Thursday.
+// We now read the authoritative day.date directly.
 function dayDate(weekIndex, dayIndex){
-  return addDays(localDate(WEEKS[weekIndex].startDate), dayIndex);
+  return localDate(WEEKS[weekIndex].days[dayIndex].date);
 }
 function dayDateKey(weekIndex, dayIndex){
-  return dateKey(dayDate(weekIndex, dayIndex));
+  return WEEKS[weekIndex].days[dayIndex].date;
 }
 const WEEKS = [
   {
@@ -653,43 +655,43 @@ const WEEKS = [
     note:'Left foot in full deload. Zero lower-limb load. Upper body gym, bike cardio, core/mobility work. Build the daily routine habit.',
     startDate:'2026-06-29',
     days:[
-      {d:'Monday',date:'2026-06-30',type:'training',blocks:[
+      {d:'Tuesday',date:'2026-06-30',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs — slow full circles',r:'5 min'},{e:'Ankle CARs — pain-free range only',r:'3 min'},{e:'Toe spread + short foot hold x10',r:'3 min'},{e:'90/90 hip sit, both sides',r:'4 min'},{e:'Thoracic cat-cow x10 + bed extension',r:'3 min'}],cue:null},
         {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand — wrist snap x50',r:''},{e:'Stationary forehand — release point x50',r:''},{e:'Hammer mechanics, slow x20',r:''},{e:'Target drill: cones at 10m and 20m',r:''}],cue:'Pivot foot stays planted. No lunging. Left foot stationary only.'},
         {c:'training',n:'Deep Space training',t:'20:00–22:00',ex:[{e:'Warm up with team — no jumping or cutting',r:''},{e:'Stationary throwing reps between drills',r:''},{e:'Call plays and cuts from position',r:''}],cue:'Protect the left foot. No explosive movement.'},
         {c:'evening',n:'Evening rehab',t:'~26 min',ex:[{e:'Golf ball plantar fascia roll',r:'3 min'},{e:'Tibialis anterior activation — seated, slow',r:'3 min'},{e:'Soleus stretch — bent knee wall x45s each',r:'3 min'},{e:'Clamshells with band x20 each side',r:'4 min'},{e:'Supine bridge + abduction band x15',r:'3 min'},{e:'Journal: 1 win, 1 learning, 1 intention',r:'5 min'}],cue:null}
       ]},
-      {d:'Tuesday',date:'2026-07-01',type:'rest',blocks:[
+      {d:'Wednesday',date:'2026-07-01',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90 hip sit',r:'4 min'},{e:'Thoracic cat-cow + extension',r:'3 min'}],cue:null},
         {c:'cardio',n:'Bike — Zone 2',t:'~40 min',ex:[{e:'Warm up 5 min easy',r:''},{e:'Steady state Zone 2 — 125–140 bpm',r:'30 min'},{e:'Cool down 5 min',r:''}],cue:'Easy effort. Aerobic base work — keep it conversational.'},
         {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each side',r:'3 sets'},{e:'Pallof press x10 each side',r:'3 sets'},{e:'Copenhagen plank hold x20s each',r:'3 sets'},{e:'90/90 hip rotation — slow',r:'5 min'},{e:'Couch stretch x60s each side',r:''},{e:'Thread the needle x5 each side',r:''}],cue:'Copenhagen: weight through elbow and inside top knee — zero foot contact on floor.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Wednesday',date:'2026-07-02',type:'training',blocks:[
+      {d:'Thursday',date:'2026-07-02',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Upper body gym — Push/Pull A',t:'~65 min',ex:[{e:'Shoulder CARs warm-up x10',r:''},{e:'Landmine press',r:'4x8 RPE 7'},{e:'DB shoulder press',r:'3x10 RPE 7'},{e:'Lat pulldown',r:'4x8'},{e:'Seated cable row',r:'3x12'},{e:'Face pulls',r:'3x15'},{e:'Dead bug',r:'3x8 each'}],cue:'Rib-down brace on all pressing. RPE cap at 8 — Bacon\'s training tonight.'},
         {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Breaking the mark — stationary pivot x20 each',r:''}],cue:'Pre-training sharpening. 30 min max.'},
         {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Modified warm-up — flag to coach',r:''},{e:'Tactical engagement: call plays, direct stack',r:''},{e:'No explosive cutting or jumping',r:''}],cue:'Two sessions today. Eat and hydrate between gym and training.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Thursday',date:'2026-07-03',type:'rest',blocks:[
+      {d:'Friday',date:'2026-07-03',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each side',r:'3 sets'},{e:'Pallof press x10 each side',r:'3 sets'},{e:'Side plank hold x25s each',r:'3 sets'},{e:'Greatest stretch x5 each side',r:''},{e:'Hip flexor stretch x60s each',r:''},{e:'Doorframe pec stretch x45s each',r:''}],cue:'Rest day movement. Keep it gentle — no high effort.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Friday',date:'2026-07-04',type:'rest',blocks:[
+      {d:'Saturday',date:'2026-07-04',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Upper body gym — Pull/Core B',t:'~55 min',ex:[{e:'Single-arm DB row',r:'4x10 each'},{e:'Lat pulldown',r:'3x8'},{e:'Face pulls',r:'3x15'},{e:'Side-lying external rotation',r:'3x12 each'},{e:'Dead bug',r:'3x8 each'},{e:'Copenhagen plank hold',r:'3x20s each'}],cue:'Copenhagen: zero foot load. Stop if hip pain.'},
         {c:'cardio',n:'Bike — Zone 3',t:'~40 min',ex:[{e:'Warm up 5 min',r:''},{e:'Zone 3 steady — 140–155 bpm',r:'30 min'},{e:'Cool down 5 min',r:''}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Saturday',date:'2026-07-05',type:'rest',blocks:[
+      {d:'Sunday',date:'2026-07-05',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'cardio',n:'Bike intervals',t:'~40 min',ex:[{e:'Warm up 8 min easy',r:''},{e:'6x2 min hard / 2 min easy — Zone 4',r:''},{e:'Cool down 8 min',r:''}],cue:'RPE 8/10 on work intervals. Hardest session of the week.'},
         {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each side',r:'3 sets'},{e:'Pallof press x10 each side',r:'3 sets'},{e:'Copenhagen plank x20s each',r:'3 sets'},{e:'90/90 hip rotation',r:'5 min'},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension over bed',r:'3 min'}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Sunday',date:'2026-07-06',type:'rest',blocks:[
+      {d:'Monday',date:'2026-07-06',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'rest',n:'Game sense + recovery',t:'~20 min',ex:[{e:'Watch 15 min game film — annotate 3 decisions',r:''},{e:'Review one Iceni set play',r:''},{e:'Mental reps: 3 defensive sequences',r:''}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
@@ -699,45 +701,45 @@ const WEEKS = [
   {
     num:2,label:'Week 2',phase:'Deload & Settle',
     note:'Continue upper body and bike. Physio session this week — get lower limb clearance. Core/mobility sessions step up slightly. Jul 11 light classroom + training session.',
-    startDate:'2026-07-07',
+    startDate:'2026-07-06',
     days:[
-      {d:'Monday',date:'2026-07-07',type:'training',blocks:[
+      {d:'Tuesday',date:'2026-07-07',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand — wrist snap x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Target drill: cones at 10m and 20m',r:''}],cue:'Pivot foot stays planted. Left foot stationary.'},
         {c:'training',n:'Deep Space training',t:'20:00–22:00',ex:[{e:'Modified warm-up — protect left foot',r:''},{e:'Stationary throwing between drills',r:''},{e:'Tactical engagement only',r:''}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Tuesday',date:'2026-07-08',type:'rest',blocks:[
+      {d:'Wednesday',date:'2026-07-08',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'cardio',n:'Bike — Zone 2',t:'~45 min',ex:[{e:'Warm up 5 min',r:''},{e:'Zone 2 — 125–140 bpm',r:'35 min'},{e:'Cool down 5 min',r:''}],cue:null},
         {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each side',r:'3 sets'},{e:'Pallof press x10 each',r:'3 sets'},{e:'Copenhagen plank x20s each',r:'3 sets'},{e:'Greatest stretch x5 each',r:''},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension over bed',r:'3 min'}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Wednesday',date:'2026-07-09',type:'training',blocks:[
+      {d:'Thursday',date:'2026-07-09',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Upper body gym — Push/Pull A',t:'~65 min',ex:[{e:'Shoulder CARs warm-up x10',r:''},{e:'Landmine press',r:'4x8 RPE 7'},{e:'DB shoulder press',r:'3x10'},{e:'Lat pulldown',r:'4x8'},{e:'Seated cable row',r:'3x12'},{e:'Face pulls',r:'3x15'},{e:'Dead bug',r:'3x8 each'}],cue:'Slight load increase from week 1 where it felt easy. RPE 7–8.'},
         {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Breaking the mark x20 each',r:''}],cue:'Pre-training sharpening. 30 min max.'},
         {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Modified warm-up',r:''},{e:'Tactical engagement: lead defensive sets',r:''},{e:'No explosive movement',r:''}],cue:'Two-session day. Manage energy.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Thursday',date:'2026-07-10',type:'rest',blocks:[
+      {d:'Friday',date:'2026-07-10',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'cardio',n:'Bike — Zone 2',t:'~45 min',ex:[{e:'Warm up 5 min',r:''},{e:'Zone 2 — 125–140 bpm',r:'35 min'},{e:'Cool down 5 min',r:''}],cue:null},
         {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each side',r:'3 sets'},{e:'Pallof press x10 each',r:'3 sets'},{e:'Side plank x25s each',r:'3 sets'},{e:'Hip flexor stretch x60s each',r:''},{e:'Thread the needle x5 each',r:''},{e:'Doorframe pec stretch x45s each',r:''}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Friday',date:'2026-07-11',type:'training',blocks:[
+      {d:'Saturday',date:'2026-07-11',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'training',n:'Iceni — Classroom + Training',t:'13:00–17:00',ex:[{e:'1pm–2pm: classroom session',r:''},{e:'2pm–5pm: pitch session — modified participation',r:''},{e:'Focus on tactical awareness and communication',r:''}],cue:'Light/social session. Good opportunity for throwing and low-intensity movement.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Saturday',date:'2026-07-12',type:'rest',blocks:[
+      {d:'Sunday',date:'2026-07-12',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Upper body gym — Pull/Core B',t:'~55 min',ex:[{e:'Single-arm DB row',r:'4x10 each'},{e:'Lat pulldown',r:'3x8'},{e:'Face pulls',r:'3x15'},{e:'Side-lying ER',r:'3x12 each'},{e:'Dead bug',r:'3x8 each'},{e:'Copenhagen plank',r:'3x20s each'}],cue:null},
         {c:'workout',n:'Core + mobility',t:'~30 min',ex:[{e:'90/90 hip rotation — slow',r:'5 min'},{e:'Greatest stretch x5 each',r:''},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension over bed',r:'3 min'},{e:'Doorframe pec stretch x45s each',r:''}],cue:'Post-gym mobility only — no loaded core work after gym session.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Sunday',date:'2026-07-13',type:'rest',blocks:[
+      {d:'Monday',date:'2026-07-13',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'rest',n:'Rest + prep',t:'Flexible',ex:[{e:'Game film — 15 min',r:''},{e:'Review Regionals game plan with Iceni',r:''}],cue:'Regionals starts Friday. Last full rest day before travel. Prioritise sleep.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
@@ -747,36 +749,36 @@ const WEEKS = [
   {
     num:3,label:'Week 3',phase:'Regionals + Recovery',
     note:'Jul 14 Pod. Jul 16 final Bacon\'s. Jul 18–20 UKU Regionals. Protect the foot. Post-tournament deload from Monday.',
-    startDate:'2026-07-14',
+    startDate:'2026-07-13',
     days:[
-      {d:'Monday',date:'2026-07-14',type:'training',blocks:[
+      {d:'Tuesday',date:'2026-07-14',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs — pain-free only',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'training',n:'Iceni — Pod session',t:'18:30–19:30',ex:[{e:'Small group tactical work',r:''},{e:'Throwing focus — no cutting',r:''}],cue:'Regionals in 4 days. Light only.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Tuesday',date:'2026-07-15',type:'rest',blocks:[
+      {d:'Wednesday',date:'2026-07-15',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'cardio',n:'Bike — short and easy',t:'~25 min',ex:[{e:'Easy Zone 2 only — 125–135 bpm',r:'20 min'}],cue:'Pre-tournament week. No intensity.'},
         {c:'workout',n:'Core + mobility — light',t:'~25 min',ex:[{e:'Dead bug x8 each',r:'2 sets'},{e:'90/90 hip rotation',r:'5 min'},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension over bed',r:'3 min'}],cue:'Pre-tournament. Light movement only — no loading.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Wednesday',date:'2026-07-16',type:'training',blocks:[
+      {d:'Thursday',date:'2026-07-16',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'throw',n:'Throwing drills',t:'~20 min',ex:[{e:'Stationary backhand x30',r:''},{e:'Stationary forehand x30',r:''},{e:'Release point check — no hammers',r:''}],cue:'Shortened session — 48h before Regionals. Light touch only.'},
         {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Final session before Regionals',r:''},{e:'Set play walkthroughs only',r:''},{e:'No full effort',r:''}],cue:'48h before Regionals. Light only. Do not load the foot.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Thursday',date:'2026-07-17',type:'rest',blocks:[
+      {d:'Friday',date:'2026-07-17',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'rest',n:'Travel / prep day',t:'Flexible',ex:[{e:'Pack kit, food, recovery tools',r:''},{e:'10 min visualisation: defensive reads at Regionals',r:''},{e:'Sleep 8+ hours tonight',r:''}],cue:'Regionals tomorrow. Zero training. Eat well, hydrate, sleep.'}
       ]},
-      {d:'Friday',date:'2026-07-18',type:'match',blocks:[
+      {d:'Saturday',date:'2026-07-18',type:'match',blocks:[
         {c:'match',n:'UKU Regionals — Day 1',t:'Oxford RFC',ex:[{e:'Team warm-up',r:''},{e:'Pool play games',r:''},{e:'Post-day: foot check — note pain levels',r:''}],cue:'Tape decisions: discuss with physio/medic before. Rigid taping restricts midtarsal movement — weigh risk vs benefit.'}
       ]},
-      {d:'Saturday',date:'2026-07-19',type:'match',blocks:[
+      {d:'Sunday',date:'2026-07-19',type:'match',blocks:[
         {c:'match',n:'UKU Regionals — Day 2',t:'Oxford RFC',ex:[{e:'Team warm-up',r:''},{e:'Elimination / bracket games',r:''},{e:'Post-day: ice and elevation if needed',r:''}],cue:null}
       ]},
-      {d:'Sunday',date:'2026-07-20',type:'match',blocks:[
+      {d:'Monday',date:'2026-07-20',type:'match',blocks:[
         {c:'match',n:'UKU Regionals — Day 3',t:'Oxford RFC',ex:[{e:'Finals day',r:''},{e:'Post-tournament: full foot and ankle assessment',r:''}],cue:'Log pain levels carefully tonight. Sets the baseline for week 4 recovery.'}
       ]}
     ]
@@ -784,42 +786,42 @@ const WEEKS = [
   {
     num:4,label:'Week 4',phase:'Post-Regionals Recovery',
     note:'Mandatory deload after Regionals. Assess foot response. Return to bike and upper body from Wednesday if foot held up. Core/mobility continues throughout.',
-    startDate:'2026-07-21',
+    startDate:'2026-07-20',
     days:[
-      {d:'Monday',date:'2026-07-21',type:'rest',blocks:[
+      {d:'Tuesday',date:'2026-07-21',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs — pain-free only',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'rest',n:'Full rest — assess',t:'Flexible',ex:[{e:'Log morning pain scores carefully',r:''},{e:'Light walk only if pain-free at rest',r:''},{e:'Ice and elevation if any swelling',r:''}],cue:'Post-tournament day 1. Do nothing. Eat, sleep, assess.'}
       ]},
-      {d:'Tuesday',date:'2026-07-22',type:'rest',blocks:[
+      {d:'Wednesday',date:'2026-07-22',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Core + mobility — gentle',t:'~25 min',ex:[{e:'Dead bug x6 each — slow',r:'2 sets'},{e:'90/90 hip rotation',r:'5 min'},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension over bed',r:'3 min'}],cue:'Post-tournament. Gentle only.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Wednesday',date:'2026-07-23',type:'training',blocks:[
+      {d:'Thursday',date:'2026-07-23',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Upper body gym — light return',t:'~50 min',ex:[{e:'Landmine press',r:'3x8 RPE 6'},{e:'Lat pulldown',r:'3x8'},{e:'Face pulls',r:'3x15'},{e:'Dead bug',r:'3x8 each'},{e:'Copenhagen plank',r:'3x20s'}],cue:'Return session. Leave something in the tank.'},
         {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Breaking the mark x20 each',r:''}],cue:'First throwing back post-Regionals. Note any shoulder or grip fatigue.'},
         {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Return to team training — modified',r:''},{e:'Assess foot response to being on pitch',r:''}],cue:'First session back post-Regionals. Communicate clearly to captain about your status.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Thursday',date:'2026-07-24',type:'rest',blocks:[
+      {d:'Friday',date:'2026-07-24',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'cardio',n:'Bike — Zone 2 return',t:'~35 min',ex:[{e:'Easy Zone 2 — 125–140 bpm',r:'25 min'}],cue:'First cardio post-Regionals. Easy only.'},
         {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Dead bug x8 each',r:'3 sets'},{e:'Pallof press x10 each',r:'3 sets'},{e:'Side plank x25s each',r:'3 sets'},{e:'Greatest stretch x5 each',r:''},{e:'Hip flexor stretch x60s each',r:''},{e:'Thread the needle x5 each',r:''}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Friday',date:'2026-07-25',type:'rest',blocks:[
+      {d:'Saturday',date:'2026-07-25',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Upper body gym — Pull/Core B',t:'~55 min',ex:[{e:'Single-arm DB row',r:'3x10 each'},{e:'Lat pulldown',r:'3x8'},{e:'Face pulls',r:'3x15'},{e:'Side-lying ER',r:'3x12 each'},{e:'Dead bug',r:'3x8 each'}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Saturday',date:'2026-07-26',type:'rest',blocks:[
+      {d:'Sunday',date:'2026-07-26',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'cardio',n:'Bike intervals — return',t:'~40 min',ex:[{e:'Warm up 8 min easy',r:''},{e:'4x3 min Zone 4 / 3 min easy',r:''},{e:'Cool down 8 min',r:''}],cue:'Scaled back from pre-Regionals. 4 intervals not 6.'},
         {c:'workout',n:'Core + mobility',t:'~30 min',ex:[{e:'Dead bug x8 each',r:'2 sets'},{e:'90/90 hip rotation',r:'5 min'},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Sunday',date:'2026-07-27',type:'rest',blocks:[
+      {d:'Monday',date:'2026-07-27',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'rest',n:'Rest + review',t:'Flexible',ex:[{e:'Review Regionals footage if available',r:''},{e:'Note 3 defensive patterns to improve before WUCC',r:''}],cue:null}
       ]}
@@ -828,44 +830,44 @@ const WEEKS = [
   {
     num:5,label:'Week 5',phase:'WUCC Build — Primary Window',
     note:'Primary improvement window. Push cardio and upper body. Core/mobility 4x this week. Scrim vs WUCC team Aug 6 — treat as match day.',
-    startDate:'2026-07-28',
+    startDate:'2026-07-27',
     days:[
-      {d:'Monday',date:'2026-07-28',type:'training',blocks:[
+      {d:'Tuesday',date:'2026-07-28',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Target drill: 15m and 25m',r:''}],cue:'Longer targets this week — pushing range.'},
         {c:'training',n:'Deep Space training',t:'20:00–22:00',ex:[{e:'Full engagement where foot allows',r:''},{e:'Push cutting intensity if foot is responding',r:''}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Tuesday',date:'2026-07-29',type:'rest',blocks:[
+      {d:'Wednesday',date:'2026-07-29',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'cardio',n:'Bike — Zone 3 build',t:'~50 min',ex:[{e:'Warm up 5 min',r:''},{e:'Zone 3 — 140–155 bpm',r:'40 min'},{e:'Cool down 5 min',r:''}],cue:'Longest Zone 3 session so far. Aerobic base building.'},
         {c:'workout',n:'Core + mobility',t:'~40 min',ex:[{e:'Dead bug x10 each',r:'3 sets'},{e:'Pallof press x12 each',r:'3 sets'},{e:'Copenhagen plank x25s each',r:'3 sets'},{e:'Side plank x30s each',r:'2 sets'},{e:'Greatest stretch x6 each',r:''},{e:'Couch stretch x90s each',r:''},{e:'Thoracic extension over bed',r:'3 min'}],cue:'Volume and hold times stepping up this week.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Wednesday',date:'2026-07-30',type:'training',blocks:[
+      {d:'Thursday',date:'2026-07-30',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Upper body gym — Push/Pull A',t:'~65 min',ex:[{e:'Shoulder CARs x10',r:''},{e:'DB shoulder press',r:'4x8 RPE 8'},{e:'Landmine press',r:'3x8'},{e:'Lat pulldown',r:'4x8'},{e:'Seated cable row',r:'3x12'},{e:'Face pulls',r:'3x15'},{e:'Dead bug',r:'3x10 each'}],cue:'Best strength session of the week — keep RPE under 8, Bacon\'s training tonight.'},
         {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Breaking the mark x20 each',r:''}],cue:'Pre-training sharpening.'},
         {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Full training where cleared',r:''},{e:'Push intensity on throwing and tactical work',r:''}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Thursday',date:'2026-07-31',type:'rest',blocks:[
+      {d:'Friday',date:'2026-07-31',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Upper body gym — Pull/Core B',t:'~55 min',ex:[{e:'Single-arm DB row',r:'4x10 each'},{e:'Lat pulldown',r:'3x8'},{e:'Face pulls',r:'3x15'},{e:'Side-lying ER',r:'3x12 each'},{e:'Dead bug',r:'3x8 each'},{e:'Copenhagen plank',r:'3x25s each'}],cue:null},
         {c:'workout',n:'Core + mobility',t:'~35 min',ex:[{e:'Pallof press x12 each',r:'3 sets'},{e:'Side plank x30s each',r:'3 sets'},{e:'Greatest stretch x6 each',r:''},{e:'Hip flexor stretch x90s each',r:''},{e:'Thread the needle x6 each',r:''}],cue:'Post-gym add-on. Core only — no extra gym loading.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Friday',date:'2026-08-01',type:'rest',blocks:[
+      {d:'Saturday',date:'2026-08-01',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'cardio',n:'Bike intervals',t:'~45 min',ex:[{e:'Warm up 8 min',r:''},{e:'6x3 min Zone 4 / 2 min easy',r:''},{e:'Cool down 8 min',r:''}],cue:'Peak interval session of this block. RPE 8–9 on work intervals.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Saturday',date:'2026-08-02',type:'rest',blocks:[
+      {d:'Sunday',date:'2026-08-02',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Core + mobility',t:'~40 min',ex:[{e:'Dead bug x10 each',r:'3 sets'},{e:'Pallof press x12 each',r:'3 sets'},{e:'Copenhagen plank x25s each',r:'3 sets'},{e:'Greatest stretch x6 each',r:''},{e:'Couch stretch x90s each',r:''},{e:'Thoracic extension over bed',r:'3 min'},{e:'Thread the needle x6 each',r:''}],cue:'Day after hardest cardio. Core and mobility only — no heavy loading.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Sunday',date:'2026-08-03',type:'rest',blocks:[
+      {d:'Monday',date:'2026-08-03',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'rest',n:'Rest + prep for scrim week',t:'Flexible',ex:[{e:'Review WUCC opposition footage if available',r:''},{e:'Mental prep: defensive reads vs high-level teams',r:''}],cue:'Scrim vs WUCC team on Thursday. Last real push before taper.'}
       ]}
@@ -874,40 +876,40 @@ const WEEKS = [
   {
     num:6,label:'Week 6',phase:'WUCC Taper — Week 1',
     note:'Begin taper. Gym volume to 60%. Core/mobility stays. Aug 6 scrim + Bacon\'s. Aug 8 WUCC scrims at Grasshoppers. Aug 11 Pod.',
-    startDate:'2026-08-04',
+    startDate:'2026-08-03',
     days:[
-      {d:'Monday',date:'2026-08-04',type:'training',blocks:[
+      {d:'Tuesday',date:'2026-08-04',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'throw',n:'Throwing drills',t:'~30 min',ex:[{e:'Stationary backhand x50',r:''},{e:'Stationary forehand x50',r:''},{e:'Hammer mechanics x20',r:''},{e:'Target drill',r:''}],cue:'Taper week. Maintain sharpness.'},
         {c:'training',n:'Deep Space training',t:'20:00–22:00',ex:[{e:'Full engagement',r:''},{e:'Quality over quantity — taper week',r:''}],cue:null},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Tuesday',date:'2026-08-05',type:'rest',blocks:[
+      {d:'Wednesday',date:'2026-08-05',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'cardio',n:'Bike — easy taper',t:'~30 min',ex:[{e:'Zone 2 easy — 125–140 bpm',r:'25 min'}],cue:'Taper begins. Reduced volume. No intensity.'},
         {c:'workout',n:'Upper body — taper session',t:'~40 min',ex:[{e:'Landmine press',r:'3x6 RPE 6'},{e:'Lat pulldown',r:'3x6'},{e:'Face pulls',r:'2x15'},{e:'Dead bug',r:'2x8 each'}],cue:'60% of normal volume. Maintain, do not progress.'},
         {c:'workout',n:'Core + mobility',t:'~30 min',ex:[{e:'Dead bug x8 each',r:'2 sets'},{e:'Pallof press x10 each',r:'2 sets'},{e:'Greatest stretch x5 each',r:''},{e:'Couch stretch x60s each',r:''},{e:'Thoracic extension',r:'3 min'}],cue:'Reduced volume matching the taper.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Wednesday',date:'2026-08-06',type:'match',blocks:[
+      {d:'Thursday',date:'2026-08-06',type:'match',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'match',n:'Scrim vs WUCC team',t:'All day',ex:[{e:'Pre-scrim warm-up — full protocol',r:''},{e:'Competitive intensity — treat as match day',r:''},{e:'Post-scrim: note what worked defensively',r:''}],cue:'HIGH INTENSITY DAY. Bacon\'s training also tonight — assess after scrim whether to attend at full or modified intensity.'},
         {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Attend if body feels ok after scrim',r:''},{e:'Modified intensity if tired',r:''}],cue:'Two high-intensity events. Permission to reduce.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Thursday',date:'2026-08-07',type:'rest',blocks:[
+      {d:'Friday',date:'2026-08-07',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'rest',n:'Recovery day',t:'Flexible',ex:[{e:'Easy walk only',r:''},{e:'Couch stretch + 90/90 + thoracic extension',r:'15 min'},{e:'Full foot and ankle check',r:''}],cue:'Day after scrim. Mandatory recovery. Do not train.'}
       ]},
-      {d:'Friday',date:'2026-08-08',type:'match',blocks:[
+      {d:'Saturday',date:'2026-08-08',type:'match',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'match',n:'WUCC Scrims — Grasshoppers RFC',t:'All day',ex:[{e:'Full match warm-up',r:''},{e:'Competitive scrims vs WUCC-level opposition',r:''},{e:'Post-day: full foot check and pain log',r:''}],cue:'Second match-intensity day this week. Protect the foot.'}
       ]},
-      {d:'Saturday',date:'2026-08-09',type:'rest',blocks:[
+      {d:'Sunday',date:'2026-08-09',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'rest',n:'Full rest',t:'Flexible',ex:[{e:'No training',r:''},{e:'Foot elevation and soft tissue work',r:''},{e:'Sleep and nutrition priority',r:''}],cue:'Day after scrims. Full rest. WUCC is 6 days away.'}
       ]},
-      {d:'Sunday',date:'2026-08-10',type:'rest',blocks:[
+      {d:'Monday',date:'2026-08-10',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'rest',n:'Visualisation + prep',t:'~20 min',ex:[{e:'15 min visualisation: WUCC defensive sequences',r:''},{e:'Pack kit list check',r:''},{e:'Review game plan',r:''}],cue:'5 days to WUCC. Mental prep is as important as physical now.'}
       ]}
@@ -916,34 +918,34 @@ const WEEKS = [
   {
     num:7,label:'Week 7',phase:'WUCC Final Taper',
     note:'Aug 11 Pod. Aug 13 final Bacon\'s. Aug 15 WUCC begins. Mobility only — no loaded sessions. Arrive healthy.',
-    startDate:'2026-08-11',
+    startDate:'2026-08-10',
     days:[
-      {d:'Monday',date:'2026-08-11',type:'training',blocks:[
+      {d:'Tuesday',date:'2026-08-11',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'training',n:'Iceni — Pod session',t:'18:30–19:30',ex:[{e:'Throwing sharpening only',r:''},{e:'Set play walkthrough — no cutting',r:''}],cue:'4 days to WUCC. Light only.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Tuesday',date:'2026-08-12',type:'rest',blocks:[
+      {d:'Wednesday',date:'2026-08-12',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'workout',n:'Mobility only',t:'~20 min',ex:[{e:'Greatest stretch x5 each',r:''},{e:'Couch stretch x60s each',r:''},{e:'90/90 hip rotation',r:'5 min'},{e:'Thoracic extension over bed',r:'3 min'}],cue:'3 days to WUCC. Nothing that creates fatigue today.'}
       ]},
-      {d:'Wednesday',date:'2026-08-13',type:'training',blocks:[
+      {d:'Thursday',date:'2026-08-13',type:'training',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'throw',n:'Throwing drills',t:'~20 min',ex:[{e:'Stationary backhand x30',r:''},{e:'Stationary forehand x30',r:''},{e:'Release point check',r:''}],cue:'Final sharpening before WUCC. Short and confident.'},
         {c:'training',n:'Iceni — Bacon\'s training',t:'19:45–22:00',ex:[{e:'Final session before WUCC',r:''},{e:'Set play run-throughs — controlled intensity',r:''},{e:'Team debrief and WUCC intentions',r:''}],cue:'48h before WUCC. Low intensity only. Confidence and connection, not fitness.'},
         {c:'evening',n:'Evening rehab',t:'~20 min',ex:[{e:'Golf ball plantar roll',r:'3 min'},{e:'Tibialis anterior activation',r:'3 min'},{e:'Soleus stretch',r:'3 min'},{e:'Clamshells x20 each',r:'4 min'},{e:'Supine bridge x15',r:'3 min'}],cue:null}
       ]},
-      {d:'Thursday',date:'2026-08-14',type:'rest',blocks:[
+      {d:'Friday',date:'2026-08-14',type:'rest',blocks:[
         {c:'morning',n:'Morning routine',t:'~18 min',ex:[{e:'Hip CARs',r:'5 min'},{e:'Ankle CARs',r:'3 min'},{e:'Toe spread + short foot',r:'3 min'},{e:'90/90',r:'4 min'},{e:'Thoracic extension',r:'3 min'}],cue:null},
         {c:'rest',n:'Travel to Limerick',t:'All day',ex:[{e:'Zero training — travel day',r:''},{e:'Hydrate consistently throughout journey',r:''},{e:'Foot elevation during travel where possible',r:''},{e:'Arrive, check in, team dinner',r:''}],cue:'WUCC tomorrow. The preparation is done. Trust it.'}
       ]},
-      {d:'Friday',date:'2026-08-15',type:'match',blocks:[
+      {d:'Saturday',date:'2026-08-15',type:'match',blocks:[
         {c:'match',n:'WUCC — Day 1',t:'Limerick, Ireland',ex:[{e:'Team warm-up',r:''},{e:'Pool play',r:''},{e:'Post-day: foot check, eat, sleep',r:''}],cue:'You are here. Everything was for this.'}
       ]},
-      {d:'Saturday',date:'2026-08-16',type:'match',blocks:[
+      {d:'Sunday',date:'2026-08-16',type:'match',blocks:[
         {c:'match',n:'WUCC — Day 2',t:'Limerick, Ireland',ex:[{e:'Morning shake-out + warm-up',r:''},{e:'Pool play / crossovers',r:''}],cue:null}
       ]},
-      {d:'Sunday',date:'2026-08-17',type:'match',blocks:[
+      {d:'Monday',date:'2026-08-17',type:'match',blocks:[
         {c:'match',n:'WUCC — Day 3',t:'Limerick, Ireland',ex:[{e:'Bracket play begins',r:''}],cue:null}
       ]}
     ]
@@ -1013,8 +1015,8 @@ function renderHeader(){
   document.getElementById('wuccCountdown').textContent=days>0?`${days}d to WUCC`:'WUCC is now!';
   document.getElementById('phaseName').textContent=w.phase;
   document.getElementById('phaseNote').textContent=w.note;
-  const ws=localDate(w.startDate);
-  const we=addDays(ws,6);
+  const ws=localDate(w.days[0].date);
+  const we=localDate(w.days[w.days.length-1].date);
   document.getElementById('weekLabel').textContent=`${w.label} · ${fmtDate(ws)} – ${fmtDate(we)}`;
 }
 
@@ -1023,7 +1025,7 @@ function renderWeekStrip(){
   WEEKS.forEach((w,i)=>{
     const b=document.createElement('div');
     b.className='wk'+(i===activeWeek?' active':'');
-    const ws=localDate(w.startDate);
+    const ws=localDate(w.days[0].date);
     const we=addDays(ws,6);
     b.innerHTML=`<div class="wk-num">${w.label}</div><div class="wk-dates">${fmtDate(ws)}</div>`;
     b.onclick=()=>{activeWeek=i;renderAll();};
