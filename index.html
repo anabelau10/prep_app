@@ -210,6 +210,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .reset-scoped-btn{width:100%;padding:11px;border-radius:var(--radius-sm);background:var(--amber-bg,rgba(251,191,36,.12));border:0.5px solid var(--amber-border,rgba(251,191,36,.3));color:var(--amber,#fbbf24);font-size:13px;font-weight:600;cursor:pointer;margin-top:4px;-webkit-tap-highlight-color:transparent}
 .reset-all-btn{width:100%;padding:11px;border-radius:var(--radius-sm);background:var(--red-bg);border:0.5px solid var(--red-border);color:var(--red);font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .reset-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--text3);font-size:11px}
+.resync-btn{width:100%;padding:11px;border-radius:var(--radius-sm);background:var(--green-bg,rgba(52,211,153,.12));border:0.5px solid var(--green-border,rgba(52,211,153,.3));color:var(--green,#34d399);font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .reset-divider::before,.reset-divider::after{content:'';flex:1;height:0.5px;background:var(--border2)}
 </style>
 </head>
@@ -364,6 +365,11 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
     <div class="modal-title">Manage data</div>
     <p style="font-size:12px;color:var(--text2);margin:0 0 16px;line-height:1.5">Clear logged data from this device <em>and</em> the synced sheet. This can't be undone.</p>
 
+    <button class="resync-btn" id="resyncBtn" onclick="forceResync()">Force re-sync all data to sheet</button>
+    <p style="font-size:11px;color:var(--text3);margin:6px 0 16px;line-height:1.45">Re-uploads everything stored on this device to the sheet. Safe — nothing is deleted. Use after switching the sheet or if rows are missing.</p>
+
+    <div class="reset-divider"><span>or clear data</span></div>
+
     <div class="form-field">
       <label class="form-label">Clear entries on or after this date</label>
       <input type="date" class="form-input" id="resetCutoff">
@@ -386,7 +392,7 @@ if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.s
 
 // ── GOOGLE SHEETS CONFIG ──
 // Paste your Apps Script web app URL here after deploying
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwSU5J-R4dBjGIPkOkfSYZUwxScSkGwVQdzbt0X3GUNGTo5i80Mp-pgg2KT1C8c-MjRpA/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbyItN49_yvxoTGZ9Pqe8cbPaeoxZQ8-Rhei7jfg9E7EI_64UDtIqz5eAbGhyrx0dHBLaw/exec';
 
 // ── SYNC QUEUE + RETRY BUFFER ──
 // Every row is pushed to a durable queue in localStorage and only removed once
@@ -1393,6 +1399,79 @@ function resetFromDate(){
   saveState(); saveRowMeta(); flushQueue();
   closeResetModal();
   refreshAll();
+}
+
+// Re-upload all locally-stored data to the sheet. Non-destructive: clears only
+// the sync clock (rowMeta) and re-enqueues every item with a fresh timestamp so
+// the server upserts it. Used after switching deployments / sheets, when the
+// app's "already synced" memory points at the old sheet.
+function forceResync(){
+  const btn=document.getElementById('resyncBtn');
+  if(btn.dataset.confirming!=='true'){
+    btn.dataset.confirming='true';
+    btn.textContent='Tap again to re-upload everything';
+    setTimeout(()=>{ if(btn.dataset.confirming==='true'){ btn.dataset.confirming='false'; btn.textContent='Force re-sync all data to sheet'; } },4000);
+    return;
+  }
+  // Clear the freshness clock so every re-enqueued row is treated as new.
+  rowMeta={}; saveRowMeta();
+
+  let n=0;
+  // Block completions — rebuild from WEEKS content + stored meta.
+  Object.keys(completedBlocks).forEach(key=>{
+    const [w,d,b]=key.split('_').map(Number);
+    const block=(WEEKS[w]&&WEEKS[w].days[d])?WEEKS[w].days[d].blocks[b]:null;
+    const meta=blockMeta[key]||{};
+    const pain=meta.pain||{};
+    syncToSheets({
+      id:'block_'+key, source:'block',
+      date: dayDateKey(w,d),
+      type: block?block.c:'', blockName: block?block.n:'', duration: block?(block.t||''):'',
+      rpe: meta.rpe!=null?meta.rpe:'', notes: meta.notes||'',
+      leftAnkle: pain.leftAnkle||0, rightAnkle: pain.rightAnkle||0, shoulder: pain.shoulder||0
+    });
+    n++;
+  });
+  // Custom sessions (includes throwing).
+  customSessions.forEach(s=>{
+    const pain=s.pain||{};
+    syncToSheets({
+      id:'custom_'+s.id, source:'custom',
+      date:s.date, type:s.type, blockName:'', duration:s.duration||'',
+      rpe:s.rpe!=null?s.rpe:'', notes:s.notes||'',
+      leftAnkle:pain.leftAnkle||0, rightAnkle:pain.rightAnkle||0, shoulder:pain.shoulder||0
+    });
+    n++;
+  });
+  // Creatine.
+  Object.keys(creatineLog).forEach(day=>{
+    if(creatineLog[day]){
+      syncToSheets({ id:'creatine_'+day, source:'creatine', date:day, type:'Creatine', notes:'true', taken:true, leftAnkle:'',rightAnkle:'',shoulder:'' });
+      n++;
+    }
+  });
+  // Pain logs (morning/evening per day).
+  Object.keys(painLog).forEach(day=>{
+    Object.keys(painLog[day]).forEach(time=>{
+      const data=painLog[day][time]||{};
+      syncToSheets({
+        id:'pain_'+day+'_'+time, source:'pain', date:day, type:'Pain', notes:time,
+        leftAnkle:data.leftAnkle||0, rightAnkle:data.rightAnkle||0, shoulder:data.shoulder||0,
+        extra:{leftAnkle:data.leftAnkle||0, rightAnkle:data.rightAnkle||0, shoulder:data.shoulder||0, time:time}
+      });
+      n++;
+    });
+  });
+  // Gate statuses.
+  Object.keys(gateStatuses).forEach(i=>{
+    syncToSheets({ id:'gate_'+i, source:'gate', date:todayKey(), type:'Gate', notes:gateStatuses[i]||'', extra:{status:gateStatuses[i]||''} });
+    n++;
+  });
+
+  flushQueue();
+  btn.dataset.confirming='false';
+  btn.textContent='Re-syncing '+n+' items…';
+  setTimeout(()=>{ btn.textContent='Force re-sync all data to sheet'; },4000);
 }
 
 // Nuke everything: local storage + sheet rows + gates.
